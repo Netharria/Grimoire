@@ -29,7 +29,7 @@ public sealed record Sin
     public required UserId UserId { get; init; }
     public required GuildId GuildId { get; init; }
 
-    public ICollection<Pardon> Pardons { get; init; } = [];
+    public Pardon? Pardon { get; init; }
     public ICollection<PublishedMessage> PublishMessages { get; init; } = [];
     public ICollection<SinReasonHistory> ReasonHistory { get; init; } = [];
 

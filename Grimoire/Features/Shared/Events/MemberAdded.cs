@@ -24,11 +24,11 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
             .Select(x => (Username?)x.Username)
             .FirstOrDefaultAsync();
 
-        var latestNickname = await dbContext.NicknameHistory
+        var latestNickname = await dbContext.ServerDisplayNameHistory
             .AsNoTracking()
             .Where(x => x.UserId == userId && x.GuildId == guildId)
             .OrderByDescending(x => x.Timestamp)
-            .Select(x => x.Nickname)
+            .Select(x => x.DisplayName)
             .FirstOrDefaultAsync();
 
         var latestAvatar = await dbContext.Avatars
@@ -56,10 +56,10 @@ internal sealed class MemberAdded(IDbContextFactory<GrimoireDbContext> dbContext
                 new UsernameHistory { Username = newUsername, UserId = userId, Timestamp = DateTimeOffset.UtcNow });
 
         if (nicknameChanged)
-            await dbContext.NicknameHistory.AddAsync(
-                new NicknameHistory
+            await dbContext.ServerDisplayNameHistory.AddAsync(
+                new ServerDisplayNameHistory
                 {
-                    UserId = userId, GuildId = guildId, Nickname = newNickname, Timestamp = DateTimeOffset.UtcNow
+                    UserId = userId, GuildId = guildId, DisplayName = newNickname, Timestamp = DateTimeOffset.UtcNow
                 });
 
         if (avatarChanged)

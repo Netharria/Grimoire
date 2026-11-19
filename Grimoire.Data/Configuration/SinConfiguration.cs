@@ -34,7 +34,6 @@ internal sealed class SinConfiguration : IEntityTypeConfiguration<Sin>
         builder.Property(e => e.Actor)
             .HasConversion<ModerationActorConverter>()
             .HasColumnName("ModeratorId")
-            .HasColumnType("numeric(20,0)")
             .IsRequired(false);
     }
 }

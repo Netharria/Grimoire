@@ -162,7 +162,23 @@ there is one connection pool.
 - **Never catch a constraint exception.** Write the race into the statement (`ON CONFLICT DO NOTHING`, a CTE,
   `INSERT … SELECT … WHERE EXISTS`). A violation that still happens is a defect.
 
-**The Settings schema** (spec 2.2). Its ids are `bigint` (P-9; `public` follows in 2.3).
+**The public schema** (spec 2.3). Every id column of a live table is `bigint` (P-9), stored through `long`
+converters by convention (`StronglyTypedIdConventions`). The legacy tables from `main` are outside the EF model and keep
+`numeric(20,0)` until P-7 drops them; no foreign key joins them to a live table.
+
+- **Pardons** (Q8): one `Pardons` row per sin, keyed by `SinId`, holding who first pardoned it and when. Neither
+  changes. The reason is in `PardonReasonHistory` (`SinId`, `SetAt`, `Reason`, `ModeratorId`): a re-pardon adds a row,
+  and the latest is the reason shown. `/Pardon` is one statement (a CTE that inserts the pardon only if it is missing,
+  then the reason), so two at once leave one pardon and two reasons.
+- **Discriminators are readable strings** (Q9): `XpHistory."Type"` (`Earned`, `Awarded`, `Reclaimed`, `Migrated`) and
+  `MessageHistory."Discriminator"` (`Created`, `Edited`, `Deleted`, `DeletedByModerator`).
+- **`ServerDisplayNameHistory`** (TD-9; was `NicknameHistory`) holds a member's name on a server over time. Until 3.11
+  it records nicknames, and `null` means the nickname was cleared.
+- **`leaderboard_view`** is a materialized view refreshed every 15 minutes (Q12). It ranks members with more than 0 XP
+  (Q12b), breaks ties by `UserId` (defect 23, enforced by a unique `(GuildId, Rank)` index), and carries each member's
+  latest server display name and username (TD-9) for 3.15 to render.
+
+**The Settings schema** (spec 2.2). Its ids are `bigint` (P-9).
 
 - **Guild settings are versioned JSON documents** (TD-6, C13): `"Settings"."GuildSettings"` holds one row per
   `(GuildId, Document, Version)`, with a `jsonb` value and who/when. There are six documents: `Modules`, which holds
@@ -199,8 +215,8 @@ error, never the connection string.
 
 **Type handlers** (`Grimoire.Data/Dapper/DapperTypeHandlers.cs`, registered by `AddEffectRuntime`):
 
-- Every id is sent as `bigint`, even while the columns are `numeric(20,0)`: Postgres casts the parameter, so the
-  index is still used, and P-9 needs no code change. Ids are read from either type.
+- Every id is sent and read as `bigint`, which every live column is since spec 2.3 (P-9). `ReadSnowflake` still
+  accepts a `numeric` value, for a legacy table read by raw SQL; nothing does so today.
 - The text value types go through their `FromDatabase` (or `Create`), `DateTimeOffset` is UTC, and `Option<T>` of
   each is `NULL` for `None`. A unit test checks by reflection that every stored domain type has a handler.
 - `Jsonb<T>` documents use System.Text.Json (`RegisterDocument<T>(options)`): unknown fields are ignored, missing

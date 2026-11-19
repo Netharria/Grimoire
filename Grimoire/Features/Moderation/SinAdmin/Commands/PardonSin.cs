@@ -51,15 +51,10 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
 
         var userName = await dbContext.UsernameHistory.GetDisplayNameAsync(userId);
 
-        dbContext.Pardons.Add(new Pardon
-        {
-            SinId = sinId,
-            GuildId = guild.GetGuildId(),
-            ModeratorId = ctx.GetModeratorId(),
-            Reason = pardonReason,
-            SetAt = DateTimeOffset.UtcNow
-        });
-        await dbContext.SaveChangesAsync();
+        // Q8: the first /Pardon records who and when; a later one only adds a reason. One statement, so two
+        // moderators pardoning at once both land (one pardon, two reasons) without catching a key violation.
+        var row = PardonReasonHistory.Create(sinId, pardonReason, ctx.GetModeratorId(), DateTimeOffset.UtcNow);
+        await dbContext.Database.ExecuteSqlAsync(PardonStatement(row));
 
         var message = $"**ID:** {sinId} **User:** {userName}";
 
@@ -77,5 +72,26 @@ internal sealed class PardonSin(IDbContextFactory<GrimoireDbContext> dbContextFa
                 .AddField("Reason", reason, true)
                 .WithColor(GrimoireColor.Green)
         });
+    }
+
+    /// <summary>
+    ///     Inserts the pardon unless the sin already has one, and the reason either way (spec 2.3, section 6.4). The
+    ///     reason's foreign key is checked at the end of the statement, so it sees the pardon inserted alongside it.
+    /// </summary>
+    internal static FormattableString PardonStatement(PardonReasonHistory row)
+    {
+        var sinId = row.SinId.Value;
+        var moderatorId = unchecked((long)row.ModeratorId.Value);
+        var reason = row.Reason.Value;
+        var at = row.SetAt;
+        return $"""
+            WITH pardon AS (
+                INSERT INTO "Pardons" ("SinId", "ModeratorId", "SetAt")
+                VALUES ({sinId}, {moderatorId}, {at})
+                ON CONFLICT ("SinId") DO NOTHING)
+            INSERT INTO "PardonReasonHistory" ("SinId", "SetAt", "Reason", "ModeratorId")
+            VALUES ({sinId}, {at}, {reason}, {moderatorId})
+            ON CONFLICT DO NOTHING
+            """;
     }
 }

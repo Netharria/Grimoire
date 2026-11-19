@@ -150,6 +150,46 @@ public sealed class PublishTests(GrimoireCoreFactory database) : IAsyncLifetime
             $"**Date:** <t:{pardon.SetAt.ToUnixTimeSeconds()}:f>\n**User:** user1 ({this.Guild.User1.Id})\n**Reason:** appealed");
     }
 
+    /// <summary>Q8b: after a re-pardon, Unban publishes the latest reason with the first pardon's date.</summary>
+    [Fact]
+    public async Task PublishUnban_AfterARePardon_UsesTheLatestReasonAndTheFirstDate()
+    {
+        var sin = await this.SeedSinAsync(SinType.Ban, "spam");
+        await this._bot.RunSlashCommandAndWaitAsync("pardon", this.Guild.Moderator,
+            SlashOption.Integer("sin_id", sin.Id.Value), SlashOption.String("reason", "appealed"));
+        await using (var dbContext = database.CreateDbContext())
+            await dbContext.Pardons.ExecuteUpdateAsync(p => p.SetProperty(x => x.SetAt, x => x.SetAt.AddHours(-1)),
+                TestContext.Current.CancellationToken);
+        await this._bot.RunSlashCommandAndWaitAsync("pardon", this.Guild.Moderator,
+            SlashOption.Integer("sin_id", sin.Id.Value), SlashOption.String("reason", "appeal accepted"));
+        await using var read = database.CreateDbContext();
+        var pardon = await read.Pardons.SingleAsync(TestContext.Current.CancellationToken);
+
+        (await this.PublishAsync("unban", sin.Id)).Description.ShouldBe($"Successfully published unban : {sin.Id}");
+        this._bot.Rest.PostsIn(this.BanLog).ShouldHaveSingleItem()["embeds"]![0]!["description"]!.GetValue<string>()
+            .ShouldBe($"**Date:** <t:{pardon.SetAt.ToUnixTimeSeconds()}:f>\n**User:** user1 ({this.Guild.User1.Id})\n**Reason:** appeal accepted");
+    }
+
+    /// <summary>OQ-1: a legacy pardon with no reason still publishes, with an empty reason as before.</summary>
+    [Fact]
+    public async Task PublishUnban_ForAPardonWithNoReason_PublishesAnEmptyReason()
+    {
+        var sin = await this.SeedSinAsync(SinType.Ban, "spam");
+        var pardonedAt = DateTimeOffset.UtcNow.AddDays(-1);
+        await using (var seed = database.CreateDbContext())
+        {
+            seed.Pardons.Add(new Pardon
+            {
+                SinId = sin.Id, ModeratorId = new ModeratorId(this.Guild.Moderator.Id), SetAt = pardonedAt
+            });
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        (await this.PublishAsync("unban", sin.Id)).Description.ShouldBe($"Successfully published unban : {sin.Id}");
+        this._bot.Rest.PostsIn(this.BanLog).ShouldHaveSingleItem()["embeds"]![0]!["description"]!.GetValue<string>()
+            .ShouldEndWith("**Reason:** ");
+    }
+
     /// <summary>SIN-78.</summary>
     [Fact]
     public async Task PublishKick_PostsAKickEmbed()

@@ -256,11 +256,11 @@ public sealed class GuildSyncAndInviteTests(GrimoireCoreFactory database) : IAsy
         => await this._bot.WaitForModLogEmbedAsync(embed => embed["author"]?["name"]?.GetValue<string>() == "User Joined"
                                                             && Field(embed, "Name") == (user ?? this.Guild.User1).MemberMention);
 
-    private async Task<(List<UsernameHistory> Usernames, List<NicknameHistory> Nicknames, List<Avatar> Avatars)> HistoryAsync()
+    private async Task<(List<UsernameHistory> Usernames, List<ServerDisplayNameHistory> Nicknames, List<Avatar> Avatars)> HistoryAsync()
     {
         await using var dbContext = database.CreateDbContext();
         return (await dbContext.UsernameHistory.AsNoTracking().ToListAsync(Token),
-            await dbContext.NicknameHistory.AsNoTracking().ToListAsync(Token),
+            await dbContext.ServerDisplayNameHistory.AsNoTracking().ToListAsync(Token),
             await dbContext.Avatars.AsNoTracking().ToListAsync(Token));
     }
 

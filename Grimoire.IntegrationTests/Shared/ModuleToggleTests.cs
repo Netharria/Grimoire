@@ -241,11 +241,11 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
     private async Task SeedNicknameAsync(FakeUser user, string nickname)
     {
         await using var seed = database.CreateDbContext();
-        seed.NicknameHistory.Add(new NicknameHistory
+        seed.ServerDisplayNameHistory.Add(new ServerDisplayNameHistory
         {
             UserId = new UserId(user.Id),
             GuildId = this.GuildId,
-            Nickname = Nickname.Create(nickname).ShouldSucceed(),
+            DisplayName = Nickname.Create(nickname).ShouldSucceed(),
             Timestamp = DateTimeOffset.UtcNow.AddSeconds(1)
         });
         await seed.SaveChangesAsync(Token);
@@ -254,8 +254,8 @@ public sealed class ModuleToggleTests(GrimoireCoreFactory database) : IAsyncLife
     private async Task<List<string>> NicknamesOfAsync(FakeUser user)
     {
         await using var dbContext = database.CreateDbContext();
-        return [.. (await dbContext.NicknameHistory.Where(row => row.UserId == new UserId(user.Id)).ToListAsync(Token))
-            .Select(row => row.Nickname?.Value).OfType<string>()];
+        return [.. (await dbContext.ServerDisplayNameHistory.Where(row => row.UserId == new UserId(user.Id)).ToListAsync(Token))
+            .Select(row => row.DisplayName?.Value).OfType<string>()];
     }
 
     private async Task SeedExpiredMuteAsync(FakeUser user, ulong roleId)

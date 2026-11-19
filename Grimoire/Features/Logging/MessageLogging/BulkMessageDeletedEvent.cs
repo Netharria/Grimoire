@@ -63,7 +63,7 @@ public sealed class BulkMessageDeletedEvent(
             messages.Select(x =>
                 new MessageDeletedEntry
                 {
-                    MessageId = x.MessageId, GuildId = guildId, Timestamp = DateTimeOffset.UtcNow
+                    MessageId = x.MessageId, Timestamp = DateTimeOffset.UtcNow
                 }));
         await dbContext.SaveChangesAsync();
 

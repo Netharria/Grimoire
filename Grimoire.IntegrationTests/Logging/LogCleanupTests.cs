@@ -178,7 +178,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
             {
                 var at = DateTimeOffset.UtcNow.AddDays(-10 + i);
                 seed.Avatars.Add(new Avatar { UserId = user, GuildId = this.GuildId, FileName = AvatarFileName.Create($"https://cdn/{i}.png"), Timestamp = at });
-                seed.NicknameHistory.Add(new NicknameHistory { UserId = user, GuildId = this.GuildId, Nickname = Nickname.Create($"nick{i}").ShouldSucceed(), Timestamp = at });
+                seed.ServerDisplayNameHistory.Add(new ServerDisplayNameHistory { UserId = user, GuildId = this.GuildId, DisplayName = Nickname.Create($"nick{i}").ShouldSucceed(), Timestamp = at });
                 seed.UsernameHistory.Add(new UsernameHistory { UserId = user, Username = Username.Create($"name{i}"), Timestamp = at });
             }
 
@@ -192,7 +192,7 @@ public sealed class LogCleanupTests(GrimoireCoreFactory database) : IAsyncLifeti
         (await dbContext.Avatars.Where(a => a.UserId == user).OrderBy(a => a.Timestamp).Select(a => a.FileName).ToListAsync(Token))
             .Select(name => name.Value).Take(2).ShouldBe(["https://cdn/4.png", "https://cdn/5.png"]);
         (await dbContext.Avatars.Where(a => a.UserId == user).CountAsync(Token)).ShouldBe(3);
-        (await dbContext.NicknameHistory.Where(n => n.UserId == user).CountAsync(Token)).ShouldBe(3);
+        (await dbContext.ServerDisplayNameHistory.Where(n => n.UserId == user).CountAsync(Token)).ShouldBe(3);
         (await dbContext.UsernameHistory.Where(n => n.UserId == user).OrderBy(n => n.Timestamp).Select(n => n.Username).ToListAsync(Token))
             .Select(name => name.Value).Take(2).ShouldBe(["name4", "name5"]);
         (await dbContext.Avatars.Where(a => a.UserId == new UserId(this.Guild.Moderator.Id)).CountAsync(Token))

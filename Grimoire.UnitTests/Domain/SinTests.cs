@@ -57,7 +57,7 @@ public sealed class SinTests
     public void ForWarn_ValidArgs_CollectionsInitializedEmpty()
     {
         var sin = Sin.ForWarn(_moderator, _userId, _guildId, _now);
-        sin.Pardons.ShouldBeEmpty();
+        sin.Pardon.ShouldBeNull();
         sin.PublishMessages.ShouldBeEmpty();
         sin.ReasonHistory.ShouldBeEmpty();
     }

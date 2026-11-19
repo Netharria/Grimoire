@@ -9,10 +9,14 @@ using JetBrains.Annotations;
 
 namespace Grimoire.Domain;
 
+/// <summary>
+///     A member's name on a server over time (TD-9; was <c>NicknameHistory</c>). Until 3.11 it records nicknames, as
+///     before; a <c>null</c> means the nickname was cleared.
+/// </summary>
 [UsedImplicitly]
-public sealed record NicknameHistory
+public sealed record ServerDisplayNameHistory
 {
-    public required Nickname? Nickname { get; init; }
+    public required Nickname? DisplayName { get; init; }
     public required DateTimeOffset Timestamp { get; init; }
     public required UserId UserId { get; init; }
     public required GuildId GuildId { get; init; }

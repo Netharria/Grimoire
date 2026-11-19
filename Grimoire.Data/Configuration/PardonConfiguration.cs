@@ -15,10 +15,27 @@ internal sealed class PardonConfiguration : IEntityTypeConfiguration<Pardon>
 {
     public void Configure(EntityTypeBuilder<Pardon> builder)
     {
-        builder.HasKey(e => new { e.SinId, e.SetAt });
+        // One pardon per sin (Q8): main's key, kept.
+        builder.HasKey(e => e.SinId);
 
         builder.HasOne(e => e.Sin)
-            .WithMany(e => e.Pardons)
+            .WithOne(e => e.Pardon)
+            .HasForeignKey<Pardon>(e => e.SinId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
+    }
+}
+
+[ExcludeFromCodeCoverage]
+internal sealed class PardonReasonHistoryConfiguration : IEntityTypeConfiguration<PardonReasonHistory>
+{
+    public void Configure(EntityTypeBuilder<PardonReasonHistory> builder)
+    {
+        builder.HasKey(e => new { e.SinId, e.SetAt });
+
+        // A reason belongs to its pardon, not straight to the sin: deleting a sin cascades through the pardon.
+        builder.HasOne(e => e.Pardon)
+            .WithMany(e => e.ReasonHistory)
             .HasForeignKey(e => e.SinId)
             .OnDelete(DeleteBehavior.Cascade)
             .IsRequired();

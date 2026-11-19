@@ -13,7 +13,6 @@ namespace Grimoire.Domain;
 public abstract record MessageHistoryEntry
 {
     public required MessageId MessageId { get; init; }
-    public required GuildId GuildId { get; init; }
     public required DateTimeOffset Timestamp { get; init; }
     public Message? Message { get; init; }
 }

@@ -16,18 +16,18 @@ namespace Grimoire.Data.Conventions;
 ///     <c>convertsNulls</c> is what lets a null column come back as a System actor.
 /// </summary>
 internal sealed class ModerationActorConverter()
-    : ValueConverter<ModerationActor, decimal?>(actor => ToColumn(actor), value => FromColumn(value), convertsNulls: true)
+    : ValueConverter<ModerationActor, long?>(actor => ToColumn(actor), value => FromColumn(value), convertsNulls: true)
 {
     // Expression trees can't hold a switch, so the converter calls these instead.
-    internal static decimal? ToColumn(ModerationActor actor)
+    internal static long? ToColumn(ModerationActor actor)
         => actor switch
         {
-            ModerationActor.Moderator moderator => moderator.Id.Value,
+            ModerationActor.Moderator moderator => unchecked((long)moderator.Id.Value),
             _ => null
         };
 
-    internal static ModerationActor FromColumn(decimal? value)
+    internal static ModerationActor FromColumn(long? value)
         => value is { } id
-            ? new ModerationActor.Moderator(new ModeratorId((ulong)id))
+            ? new ModerationActor.Moderator(new ModeratorId(unchecked((ulong)id)))
             : new ModerationActor.System();
 }

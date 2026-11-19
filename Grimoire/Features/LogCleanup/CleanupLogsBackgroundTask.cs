@@ -145,10 +145,10 @@ internal sealed class CleanupLogsBackgroundTask(
                 .Skip(3).ToList())
             .ExecuteDeleteAsync(cancellationToken);
 
-        await grimoireDbContext.NicknameHistory
+        await grimoireDbContext.ServerDisplayNameHistory
             .Select(x => new { x.GuildId, x.UserId })
             .Distinct()
-            .SelectMany(x => grimoireDbContext.NicknameHistory
+            .SelectMany(x => grimoireDbContext.ServerDisplayNameHistory
                 .Where(y => y.UserId == x.UserId && y.GuildId == x.GuildId)
                 .OrderByDescending(nicknameHistory => nicknameHistory.Timestamp)
                 .Skip(3).ToList())

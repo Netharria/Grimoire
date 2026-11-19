@@ -32,19 +32,17 @@ public sealed partial class PublishCommands
             {
                 // ReSharper disable AccessToDisposedClosure
                 x.UserId,
-                LatestPardon = dbContext.Pardons
-                    .Where(p => p.SinId == x.Id)
-                    .OrderByDescending(p => p.SetAt)
-                    .Select(p => new
+                // Q8b: the latest reason with the pardon's own date. A legacy pardon may have no reason (spec 2.3, OQ-1).
+                LatestPardon = x.Pardon == null
+                    ? null
+                    : new
                     {
-                        p.Reason,
-                        PardonDate = dbContext.Pardons
-                            .Where(p2 => p2.SinId == x.Id)
-                            .OrderBy(p2 => p2.SetAt)
-                            .Select(p2 => p2.SetAt)
-                            .First()
-                    })
-                    .FirstOrDefault(),
+                        Reason = x.Pardon.ReasonHistory
+                            .OrderByDescending(r => r.SetAt)
+                            .Select(r => r.Reason.Value)
+                            .FirstOrDefault() ?? string.Empty,
+                        PardonDate = x.Pardon.SetAt
+                    },
                 UnbanMessageId = x.PublishMessages
                     .Where(m => m.PublishType == PublishType.Unban)
                     .Select(m => (MessageId?)m.MessageId)
@@ -66,7 +64,7 @@ public sealed partial class PublishCommands
             return;
         }
 
-        await this.PublishAsync(ctx, dbContext, sinId, PublishType.Unban, result.UserId, result.LatestPardon.Reason.Value,
+        await this.PublishAsync(ctx, dbContext, sinId, PublishType.Unban, result.UserId, result.LatestPardon.Reason,
             result.UnbanMessageId, result.LatestPardon.PardonDate);
     }
 }

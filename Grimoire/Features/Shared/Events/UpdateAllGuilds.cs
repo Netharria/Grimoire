@@ -30,7 +30,7 @@ internal sealed class UpdateAllGuilds(
                 await dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(guild.Value);
 
             var nicknamesUpdated =
-                await dbContext.NicknameHistory.AddMissingNickNameHistoryAsync(guild.Value);
+                await dbContext.ServerDisplayNameHistory.AddMissingNickNameHistoryAsync(guild.Value);
 
             var avatarsUpdated =
                 await dbContext.Avatars.AddMissingAvatarsHistoryAsync(guild.Value);

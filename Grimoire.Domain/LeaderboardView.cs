@@ -13,4 +13,10 @@ public sealed record LeaderboardView
     public required UserId UserId { get; init; }
     public required long TotalXp { get; init; }
     public required long Rank { get; init; }
+
+    /// <summary>The member's latest server display name in the guild, if any (TD-9). Rendered from 3.15 on.</summary>
+    public string? DisplayName { get; init; }
+
+    /// <summary>The member's latest username, if any (TD-9). Rendered from 3.15 on.</summary>
+    public string? Username { get; init; }
 }

@@ -128,9 +128,7 @@ public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
             seed.Pardons.Add(new Pardon
             {
                 SinId = sin.Id,
-                GuildId = this.GuildId,
                 ModeratorId = new ModeratorId(this.Guild.Admin.Id),
-                Reason = ModerationReason.Create("forgiven").ShouldSucceed(),
                 SetAt = pardonedAt
             });
             await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -140,6 +138,38 @@ public sealed class SinLogTests(GrimoireCoreFactory database) : IAsyncLifetime
 
         log.ShouldStartWith($"~~**{sin.Id} : Warn**");
         log.ShouldContain($"~~**Pardoned by: <@{this.Guild.Admin.Id}> on <t:{pardonedAt.ToUnixTimeSeconds()}:f>**");
+    }
+
+    /// <summary>
+    ///     Defect 7 and Q8b: after a re-pardon by someone else, /SinLog still names the first moderator and date. Before
+    ///     spec 2.3 it showed the newest pardon's moderator with the oldest pardon's date.
+    /// </summary>
+    [Fact]
+    public async Task ARePardonedSin_StillNamesTheFirstModeratorAndDate()
+    {
+        var sin = await this.SeedSinAsync(SinType.Warn, this.Guild.User1, this.Guild.Moderator);
+        var pardonedAt = DateTimeOffset.UtcNow.AddHours(-2);
+        await using (var seed = database.CreateDbContext())
+        {
+            seed.Pardons.Add(new Pardon
+            {
+                SinId = sin.Id,
+                ModeratorId = new ModeratorId(this.Guild.Admin.Id),
+                SetAt = pardonedAt,
+                ReasonHistory =
+                [
+                    PardonReasonHistory.Create(sin.Id, ModerationReason.Create("first").ShouldSucceed(),
+                        new ModeratorId(this.Guild.Admin.Id), pardonedAt)
+                ]
+            });
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await this._bot.RunSlashCommandAndWaitAsync("pardon", this.Guild.Moderator,
+            SlashOption.Integer("sin_id", sin.Id.Value), SlashOption.String("reason", "second"));
+
+        (await this.SinLogAsync(this.Guild.Moderator, SinQueryType.All, this.Guild.User1)).Description.ShouldNotBeNull()
+            .ShouldContain($"**Pardoned by: <@{this.Guild.Admin.Id}> on <t:{pardonedAt.ToUnixTimeSeconds()}:f>**");
     }
 
     /// <summary>SIN-10: a sin without a reason shows a blank reason.</summary>

@@ -51,7 +51,7 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
         var pardon = await dbContext.Pardons.SingleAsync(TestContext.Current.CancellationToken);
         pardon.SinId.ShouldBe(sin.Id);
         pardon.ModeratorId.ShouldBe(new ModeratorId(this.Guild.Moderator.Id));
-        pardon.Reason.Value.ShouldBe("forgiven");
+        (await dbContext.PardonReasonHistory.SingleAsync(TestContext.Current.CancellationToken)).Reason.Value.ShouldBe("forgiven");
         var logged = await this._bot.WaitForModLogEmbedAsync(e => e["author"]?["name"]?.GetValue<string>() == "Pardon");
         Fields(logged).ShouldBe([("User", "user1"), ("Sin Id", sin.Id.ToString()), ("Moderator", this.Guild.Moderator.MemberMention), ("Reason", "forgiven")]);
         this._bot.Rest.Unhandled.ShouldBeEmpty();
@@ -101,17 +101,55 @@ public sealed class SinAdminTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await this.PardonAsync(sin.Id, "x")).Description.ShouldBe($"**ID:** {sin.Id} **User:** {stranger.Mention}");
     }
 
-    /// <summary>SIN-25: there's no "already pardoned" check, so a second pardon adds a second row.</summary>
+    /// <summary>
+    ///     SIN-25: a second pardon corrects the wording (Q8). The sin keeps one pardon, with its first moderator and
+    ///     date, and gains a second reason.
+    /// </summary>
     [Fact]
-    public async Task Pardon_Twice_AddsASecondPardon()
+    public async Task Pardon_Twice_KeepsThePardonAndAddsAReason()
     {
         var sin = await this.SeedWarnAsync(this.Guild.User1);
 
         await this.PardonAsync(sin.Id, "first");
+        // Mark the first pardon as the admin's, an hour ago, so the second (by the moderator, now) can't hide a change.
+        var firstAt = DateTimeOffset.UtcNow.AddHours(-1).AddTicks(-(DateTimeOffset.UtcNow.UtcTicks % TimeSpan.TicksPerMicrosecond));
+        await using (var first = database.CreateDbContext())
+            await first.Pardons.Where(p => p.SinId == sin.Id)
+                .ExecuteUpdateAsync(p => p.SetProperty(x => x.ModeratorId, new ModeratorId(this.Guild.Admin.Id))
+                    .SetProperty(x => x.SetAt, firstAt), TestContext.Current.CancellationToken);
+
         await this.PardonAsync(sin.Id, "second");
 
         await using var dbContext = database.CreateDbContext();
-        (await dbContext.Pardons.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
+        var pardon = await dbContext.Pardons.SingleAsync(TestContext.Current.CancellationToken);
+        pardon.ModeratorId.ShouldBe(new ModeratorId(this.Guild.Admin.Id));
+        pardon.SetAt.ShouldBe(firstAt, TimeSpan.FromMilliseconds(1));
+        (await dbContext.PardonReasonHistory.OrderBy(r => r.SetAt).Select(r => r.Reason.Value)
+            .ToListAsync(TestContext.Current.CancellationToken)).ShouldBe(["first", "second"]);
+    }
+
+    /// <summary>
+    ///     Two first pardons of one sin at once both land (spec 2.3, section 2.3): the statement inserts the pardon only
+    ///     if it is missing, so one wins and neither fails on the key.
+    /// </summary>
+    [Fact]
+    public async Task TwoFirstPardonsAtOnce_LeaveOnePardonAndTwoReasons()
+    {
+        var sin = await this.SeedWarnAsync(this.Guild.User1);
+        var now = DateTimeOffset.UtcNow;
+        var rows = new[] { ("one", this.Guild.Moderator.Id, now), ("two", this.Guild.Admin.Id, now.AddMilliseconds(1)) }
+            .Select(row => PardonReasonHistory.Create(sin.Id, ModerationReason.Create(row.Item1).ShouldSucceed(),
+                new ModeratorId(row.Item2), row.Item3));
+
+        await Task.WhenAll(rows.Select(async row =>
+        {
+            await using var dbContext = database.CreateDbContext();
+            await dbContext.Database.ExecuteSqlAsync(Grimoire.Features.Moderation.SinAdmin.Commands.PardonSin.PardonStatement(row), TestContext.Current.CancellationToken);
+        }));
+
+        await using var read = database.CreateDbContext();
+        (await read.Pardons.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+        (await read.PardonReasonHistory.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
     }
 
     /// <summary>SIN-26: an id that isn't a positive number is rejected before anything happens.</summary>

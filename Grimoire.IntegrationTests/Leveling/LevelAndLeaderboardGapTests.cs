@@ -105,9 +105,9 @@ public sealed class LevelAndLeaderboardGapTests(GrimoireCoreFactory database) : 
         reply.Embed!["footer"]!["text"]!.GetValue<string>().ShouldBe("Total Users 21");
     }
 
-    /// <summary>LVL-71: a member whose XP was all reclaimed stays on the leaderboard, with 0 XP.</summary>
+    /// <summary>LVL-71: a member whose XP was all reclaimed leaves the leaderboard (Q12b, spec 2.3).</summary>
     [Fact]
-    public async Task Leaderboard_KeepsAMemberReclaimedToZero()
+    public async Task Leaderboard_LeavesOutAMemberReclaimedToZero()
     {
         await this.SeedXpAsync((this.Guild.User1, 10), (this.Guild.Moderator, 30));
         await this._bot.RunSlashCommandAndWaitAsync("reclaim", this.Guild.Moderator,
@@ -117,9 +117,7 @@ public sealed class LevelAndLeaderboardGapTests(GrimoireCoreFactory database) : 
 
         var reply = await this.LeaderboardAsync(LeaderboardOption.Top);
 
-        reply.Description.ShouldBe(string.Join('\n',
-            $"**1** {this.Guild.Moderator.Mention} **XP:** 30",
-            $"**2** {this.Guild.User1.Mention} **XP:** 0"));
+        reply.Description.ShouldBe($"**1** {this.Guild.Moderator.Mention} **XP:** 30");
     }
 
     private async Task<long> XpOfUser1Async()

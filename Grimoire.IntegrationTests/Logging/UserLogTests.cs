@@ -142,9 +142,9 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
         Field(embed, "Before").ShouldBe("first");
         Field(embed, "After").ShouldBe("second");
         await using var dbContext = database.CreateDbContext();
-        (await dbContext.NicknameHistory.Where(h => h.UserId == new UserId(this.Guild.User1.Id))
+        (await dbContext.ServerDisplayNameHistory.Where(h => h.UserId == new UserId(this.Guild.User1.Id))
                 .ToListAsync(TestContext.Current.CancellationToken))
-            .ShouldContain(h => h.Nickname.HasValue && h.Nickname.Value.Value == "second");
+            .ShouldContain(h => h.DisplayName.HasValue && h.DisplayName.Value.Value == "second");
     }
 
     /// <summary>A member's first nickname should be logged too.</summary>
@@ -319,11 +319,11 @@ public sealed class UserLogTests(GrimoireCoreFactory database) : IAsyncLifetime
     private async Task SeedNicknameAsync(FakeUser user, string nickname)
     {
         await using var seed = database.CreateDbContext();
-        seed.NicknameHistory.Add(new NicknameHistory
+        seed.ServerDisplayNameHistory.Add(new ServerDisplayNameHistory
         {
             UserId = new UserId(user.Id),
             GuildId = this.GuildId,
-            Nickname = Nickname.Create(nickname).ShouldSucceed(),
+            DisplayName = Nickname.Create(nickname).ShouldSucceed(),
             Timestamp = DateTimeOffset.UtcNow.AddSeconds(1)
         });
         await seed.SaveChangesAsync(TestContext.Current.CancellationToken);

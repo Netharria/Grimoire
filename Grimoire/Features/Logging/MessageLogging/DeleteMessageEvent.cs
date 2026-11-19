@@ -104,14 +104,12 @@ public sealed partial class DeleteMessageEvent(
                 ? new MessageDeletedByModeratorEntry
                 {
                     MessageId = args.Message.GetMessageId(),
-                    GuildId = args.Guild.GetGuildId(),
                     ModeratorId = new ModeratorId(modId),
                     Timestamp = DateTimeOffset.UtcNow
                 }
                 : new MessageDeletedEntry
                 {
                     MessageId = args.Message.GetMessageId(),
-                    GuildId = args.Guild.GetGuildId(),
                     Timestamp = DateTimeOffset.UtcNow
                 });
         await dbContext.SaveChangesAsync();

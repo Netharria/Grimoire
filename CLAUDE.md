@@ -55,8 +55,10 @@ Seven projects in the solution:
 
 - **Grimoire** — Main executable. Discord bot entry point, all slash command handlers, event listeners, and background services.
 - **Grimoire.Data** — EF Core infrastructure: `GrimoireDbContext` and its entity configurations (the model is built by
-  `GrimoireModel.Configure`, which the migrations context calls too). No migrations: see Grimoire.Migrations. Also the
-  Dapper type handlers (`Dapper/DapperTypeHandlers.cs`), which use the domain's internal `FromDatabase` factories.
+  `GrimoireModel.Configure`, which the migrations context calls too). No migrations: see Grimoire.Migrations. Ids are
+  `bigint` by convention (`Conventions/StronglyTypedIdConventions.cs`, linked into Settings and Migrations). The legacy
+  tables from `main` are outside the model and stay in the database until P-7 (spec 2.3). Also the Dapper type
+  handlers (`Dapper/DapperTypeHandlers.cs`), which use the domain's internal `FromDatabase` factories.
 - **Grimoire.Domain** — Domain models only. Entity definitions, strongly-typed IDs, and the error cases (`Invalid`,
   `NotFound`, `Forbidden`, `Unavailable`, in `Errors.cs`). References `LanguageExt.Core` (pinned, `5.0.0-beta-78`):
   results are `Fin<T>`, input checks `Validation<Error, T>`, absent values `Option<T>`. `Migration/` holds the

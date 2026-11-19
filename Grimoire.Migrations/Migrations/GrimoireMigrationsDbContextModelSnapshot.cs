@@ -82,16 +82,16 @@ namespace Grimoire.Settings.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.Attachment", b =>
                 {
-                    b.Property<decimal>("Id")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("AttachmentUrl")
                         .IsRequired()
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");
 
-                    b.Property<decimal>("MessageId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id")
                         .HasName("PK_Attachments");
@@ -104,11 +104,11 @@ namespace Grimoire.Settings.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.Avatar", b =>
                 {
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("Timestamp")
                         .ValueGeneratedOnAdd()
@@ -132,8 +132,8 @@ namespace Grimoire.Settings.Migrations
                         .HasMaxLength(24)
                         .HasColumnType("character varying(24)");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -148,8 +148,8 @@ namespace Grimoire.Settings.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
-                    b.Property<decimal?>("ModeratorId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long?>("ModeratorId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Name", "GuildId", "CreatedAt")
                         .HasName("PK_CustomCommands");
@@ -170,14 +170,14 @@ namespace Grimoire.Settings.Migrations
                         .HasMaxLength(24)
                         .HasColumnType("character varying(24)");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("RoleId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("RoleId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("RoleType")
                         .IsRequired()
@@ -200,11 +200,11 @@ namespace Grimoire.Settings.Migrations
                         .HasMaxLength(24)
                         .HasColumnType("character varying(24)");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("UsedAt")
                         .HasColumnType("timestamp with time zone");
@@ -220,8 +220,11 @@ namespace Grimoire.Settings.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.LeaderboardView", b =>
                 {
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<string>("DisplayName")
+                        .HasColumnType("text");
+
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
                     b.Property<long>("Rank")
                         .HasColumnType("bigint");
@@ -229,8 +232,11 @@ namespace Grimoire.Settings.Migrations
                     b.Property<long>("TotalXp")
                         .HasColumnType("bigint");
 
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Username")
+                        .HasColumnType("text");
 
                     b.ToTable((string)null);
 
@@ -239,25 +245,25 @@ namespace Grimoire.Settings.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.Message", b =>
                 {
-                    b.Property<decimal>("Id")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("ChannelId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("ChannelId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("CreatedTimestamp")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal?>("ReferencedMessageId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long?>("ReferencedMessageId")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id")
                         .HasName("PK_Messages");
@@ -270,8 +276,8 @@ namespace Grimoire.Settings.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.MessageHistoryEntry", b =>
                 {
-                    b.Property<decimal>("MessageId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("timestamp with time zone")
@@ -281,9 +287,6 @@ namespace Grimoire.Settings.Migrations
                         .IsRequired()
                         .HasMaxLength(34)
                         .HasColumnType("character varying(34)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
 
                     b.HasKey("MessageId", "Timestamp")
                         .HasName("PK_MessageHistory");
@@ -295,426 +298,21 @@ namespace Grimoire.Settings.Migrations
                     b.UseTphMappingStrategy();
                 });
 
-            modelBuilder.Entity("Grimoire.Domain.NicknameHistory", b =>
-                {
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("Nickname")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.HasKey("UserId", "GuildId", "Timestamp")
-                        .HasName("PK_NicknameHistory");
-
-                    b.ToTable("NicknameHistory");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.Channel", b =>
-                {
-                    b.Property<decimal>("Id")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("Id")
-                        .HasName("PK_Channels");
-
-                    b.ToTable("Channels");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.Guild", b =>
-                {
-                    b.Property<decimal>("Id")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("ModChannelLog")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("UserCommandChannelId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("Id")
-                        .HasName("PK_Guilds");
-
-                    b.ToTable("Guilds");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.GuildCommandsSettings", b =>
-                {
-                    b.Property<decimal>("GuildId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<bool>("ModuleEnabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.HasKey("GuildId")
-                        .HasName("PK_GuildCommandsSettings");
-
-                    b.ToTable("GuildCommandsSettings");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.GuildLevelSettings", b =>
-                {
-                    b.Property<decimal>("GuildId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<int>("Amount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(5);
-
-                    b.Property<int>("Base")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(15);
-
-                    b.Property<decimal?>("LevelChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<int>("Modifier")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(50);
-
-                    b.Property<bool>("ModuleEnabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<TimeSpan>("TextTime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("interval")
-                        .HasDefaultValue(new TimeSpan(0, 0, 3, 0, 0));
-
-                    b.HasKey("GuildId")
-                        .HasName("PK_GuildLevelSettings");
-
-                    b.ToTable("GuildLevelSettings");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.GuildMessageLogSettings", b =>
-                {
-                    b.Property<decimal>("GuildId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("BulkDeleteChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("DeleteChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("EditChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<bool>("ModuleEnabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.HasKey("GuildId")
-                        .HasName("PK_GuildMessageLogSettings");
-
-                    b.ToTable("GuildMessageLogSettings");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.GuildModerationSettings", b =>
-                {
-                    b.Property<decimal>("GuildId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<bool>("AntiSpamEnabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<TimeSpan>("AutoPardonAfter")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("interval")
-                        .HasDefaultValue(new TimeSpan(10950, 0, 0, 0, 0));
-
-                    b.Property<bool>("ModuleEnabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<decimal?>("MuteRole")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("PublicBanLog")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("GuildId")
-                        .HasName("PK_GuildModerationSettings");
-
-                    b.HasIndex("MuteRole")
-                        .IsUnique()
-                        .HasDatabaseName("IX_GuildModerationSettings_MuteRole");
-
-                    b.ToTable("GuildModerationSettings");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.GuildUserLogSettings", b =>
-                {
-                    b.Property<decimal>("GuildId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("AvatarChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("JoinChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("LeaveChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<bool>("ModuleEnabled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<decimal?>("NicknameChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("UsernameChannelLogId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("GuildId")
-                        .HasName("PK_GuildUserLogSettings");
-
-                    b.ToTable("GuildUserLogSettings");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.IgnoredChannel", b =>
-                {
-                    b.Property<decimal>("ChannelId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("ChannelId")
-                        .HasName("PK_IgnoredChannels");
-
-                    b.ToTable("IgnoredChannels");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.IgnoredMember", b =>
-                {
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("UserId", "GuildId")
-                        .HasName("PK_IgnoredMembers");
-
-                    b.ToTable("IgnoredMembers");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.IgnoredRole", b =>
-                {
-                    b.Property<decimal>("RoleId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("RoleId")
-                        .HasName("PK_IgnoredRoles");
-
-                    b.ToTable("IgnoredRoles");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.Lock", b =>
-                {
-                    b.Property<decimal>("ChannelId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<DateTimeOffset>("EndTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal?>("ModeratorId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<long>("PreviouslyAllowed")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("PreviouslyDenied")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.HasKey("ChannelId")
-                        .HasName("PK_Locks");
-
-                    b.HasIndex("EndTime")
-                        .HasDatabaseName("IX_Locks_EndTime");
-
-                    b.ToTable("Locks");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.Member", b =>
-                {
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("UserId", "GuildId")
-                        .HasName("PK_Members");
-
-                    b.ToTable("Members");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.MessageLogChannelOverride", b =>
-                {
-                    b.Property<decimal>("ChannelId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<int>("ChannelOption")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("ChannelId")
-                        .HasName("PK_MessagesLogChannelOverrides");
-
-                    b.ToTable("MessagesLogChannelOverrides");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.Mute", b =>
-                {
-                    b.Property<long>("SinId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTimeOffset>("EndTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("SinId")
-                        .HasName("PK_Mutes");
-
-                    b.HasIndex("EndTime")
-                        .HasDatabaseName("IX_Mutes_EndTime");
-
-                    b.ToTable("Mutes");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.Reward", b =>
-                {
-                    b.Property<decimal>("RoleId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<int>("RewardLevel")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("RewardMessage")
-                        .HasMaxLength(4096)
-                        .HasColumnType("character varying(4096)");
-
-                    b.HasKey("RoleId")
-                        .HasName("PK_Rewards");
-
-                    b.HasIndex("GuildId", "RewardLevel")
-                        .HasDatabaseName("IX_Rewards_GuildId_RewardLevel");
-
-                    b.ToTable("Rewards");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.Role", b =>
-                {
-                    b.Property<decimal>("Id")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("Id")
-                        .HasName("PK_Roles");
-
-                    b.HasIndex("GuildId")
-                        .HasDatabaseName("IX_Roles_GuildId");
-
-                    b.ToTable("Roles");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.SpamFilterOverride", b =>
-                {
-                    b.Property<decimal>("ChannelId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.Property<int>("ChannelOption")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("ChannelId")
-                        .HasName("PK_SpamFilterOverrides");
-
-                    b.ToTable("SpamFilterOverrides");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.User", b =>
-                {
-                    b.Property<decimal>("Id")
-                        .HasColumnType("numeric(20,0)");
-
-                    b.HasKey("Id")
-                        .HasName("PK_Users");
-
-                    b.ToTable("Users");
-                });
-
             modelBuilder.Entity("Grimoire.Domain.OldLogMessage", b =>
                 {
-                    b.Property<decimal>("Id")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("ChannelId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("ChannelId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
                     b.Property<int>("TimesTried")
                         .ValueGeneratedOnAdd()
@@ -735,14 +333,28 @@ namespace Grimoire.Settings.Migrations
                     b.Property<long>("SinId")
                         .HasColumnType("bigint");
 
+                    b.Property<long>("ModeratorId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTimeOffset>("SetAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.HasKey("SinId")
+                        .HasName("PK_Pardons");
 
-                    b.Property<decimal>("ModeratorId")
-                        .HasColumnType("numeric(20,0)");
+                    b.ToTable("Pardons");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.PardonReasonHistory", b =>
+                {
+                    b.Property<long>("SinId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("ModeratorId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Reason")
                         .IsRequired()
@@ -750,18 +362,18 @@ namespace Grimoire.Settings.Migrations
                         .HasColumnType("character varying(1000)");
 
                     b.HasKey("SinId", "SetAt")
-                        .HasName("PK_Pardons");
+                        .HasName("PK_PardonReasonHistory");
 
-                    b.ToTable("Pardons");
+                    b.ToTable("PardonReasonHistory");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.ProxiedMessageLink", b =>
                 {
-                    b.Property<decimal>("ProxyMessageId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("ProxyMessageId")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("OriginalMessageId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("OriginalMessageId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("MemberId")
                         .IsRequired()
@@ -795,8 +407,8 @@ namespace Grimoire.Settings.Migrations
                     b.Property<int>("PublishType")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("MessageId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("SinId", "PublishType")
                         .HasName("PK_PublishedMessages");
@@ -806,18 +418,18 @@ namespace Grimoire.Settings.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.Reaction", b =>
                 {
-                    b.Property<decimal>("MessageId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Emoji")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("ReactedAt")
                         .HasColumnType("timestamp with time zone");
@@ -831,6 +443,29 @@ namespace Grimoire.Settings.Migrations
                     b.ToTable("Reactions");
                 });
 
+            modelBuilder.Entity("Grimoire.Domain.ServerDisplayNameHistory", b =>
+                {
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("Timestamp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("UserId", "GuildId", "Timestamp")
+                        .HasName("PK_ServerDisplayNameHistory");
+
+                    b.ToTable("ServerDisplayNameHistory");
+                });
+
             modelBuilder.Entity("Grimoire.Domain.Sin", b =>
                 {
                     b.Property<long>("Id")
@@ -839,12 +474,12 @@ namespace Grimoire.Settings.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
-                    b.Property<decimal?>("Actor")
-                        .HasColumnType("numeric(20,0)")
+                    b.Property<long?>("Actor")
+                        .HasColumnType("bigint")
                         .HasColumnName("ModeratorId");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("SinOn")
                         .ValueGeneratedOnAdd()
@@ -854,8 +489,8 @@ namespace Grimoire.Settings.Migrations
                     b.Property<int>("SinType")
                         .HasColumnType("integer");
 
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id")
                         .HasName("PK_Sins");
@@ -877,8 +512,8 @@ namespace Grimoire.Settings.Migrations
                     b.Property<DateTimeOffset>("SetAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal?>("Actor")
-                        .HasColumnType("numeric(20,0)")
+                    b.Property<long?>("Actor")
+                        .HasColumnType("bigint")
                         .HasColumnName("ModeratorId");
 
                     b.Property<string>("Reason")
@@ -894,8 +529,8 @@ namespace Grimoire.Settings.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.UsernameHistory", b =>
                 {
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("Timestamp")
                         .ValueGeneratedOnAdd()
@@ -915,11 +550,11 @@ namespace Grimoire.Settings.Migrations
 
             modelBuilder.Entity("Grimoire.Domain.XpHistoryEntry", b =>
                 {
-                    b.Property<decimal>("UserId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
 
-                    b.Property<decimal>("GuildId")
-                        .HasColumnType("numeric(20,0)");
+                    b.Property<long>("GuildId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("TimeOut")
                         .HasColumnType("timestamp with time zone");
@@ -1337,8 +972,8 @@ namespace Grimoire.Settings.Migrations
                 {
                     b.HasBaseType("Grimoire.Domain.MessageHistoryEntry");
 
-                    b.Property<decimal>("ModeratorId")
-                        .HasColumnType("numeric(20,0)")
+                    b.Property<long>("ModeratorId")
+                        .HasColumnType("bigint")
                         .HasColumnName("ModeratorId");
 
                     b.HasDiscriminator().HasValue("DeletedByModerator");
@@ -1368,9 +1003,9 @@ namespace Grimoire.Settings.Migrations
                 {
                     b.HasBaseType("Grimoire.Domain.XpHistoryEntry");
 
-                    b.Property<decimal>("AwarderId")
+                    b.Property<long>("AwarderId")
                         .ValueGeneratedOnUpdateSometimes()
-                        .HasColumnType("numeric(20,0)")
+                        .HasColumnType("bigint")
                         .HasColumnName("AwarderId");
 
                     b.HasDiscriminator().HasValue("Awarded");
@@ -1394,9 +1029,9 @@ namespace Grimoire.Settings.Migrations
                 {
                     b.HasBaseType("Grimoire.Domain.XpHistoryEntry");
 
-                    b.Property<decimal?>("ModeratorId")
+                    b.Property<long?>("ModeratorId")
                         .ValueGeneratedOnUpdateSometimes()
-                        .HasColumnType("numeric(20,0)")
+                        .HasColumnType("bigint")
                         .HasColumnName("AwarderId");
 
                     b.HasDiscriminator().HasValue("Reclaimed");
@@ -1529,38 +1164,28 @@ namespace Grimoire.Settings.Migrations
                     b.Navigation("Message");
                 });
 
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.GuildModerationSettings", b =>
-                {
-                    b.HasOne("Grimoire.Domain.Obsolete.Role", "MuteRoleNav")
-                        .WithOne()
-                        .HasForeignKey("Grimoire.Domain.Obsolete.GuildModerationSettings", "MuteRole")
-                        .HasConstraintName("FK_GuildModerationSettings_Roles_MuteRole");
-
-                    b.Navigation("MuteRoleNav");
-                });
-
-            modelBuilder.Entity("Grimoire.Domain.Obsolete.Role", b =>
-                {
-                    b.HasOne("Grimoire.Domain.Obsolete.Guild", "Guild")
-                        .WithMany()
-                        .HasForeignKey("GuildId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_Roles_Guilds_GuildId");
-
-                    b.Navigation("Guild");
-                });
-
             modelBuilder.Entity("Grimoire.Domain.Pardon", b =>
                 {
                     b.HasOne("Grimoire.Domain.Sin", "Sin")
-                        .WithMany("Pardons")
-                        .HasForeignKey("SinId")
+                        .WithOne("Pardon")
+                        .HasForeignKey("Grimoire.Domain.Pardon", "SinId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_Pardons_Sins_SinId");
 
                     b.Navigation("Sin");
+                });
+
+            modelBuilder.Entity("Grimoire.Domain.PardonReasonHistory", b =>
+                {
+                    b.HasOne("Grimoire.Domain.Pardon", "Pardon")
+                        .WithMany("ReasonHistory")
+                        .HasForeignKey("SinId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_PardonReasonHistory_Pardons_SinId");
+
+                    b.Navigation("Pardon");
                 });
 
             modelBuilder.Entity("Grimoire.Domain.ProxiedMessageLink", b =>
@@ -1638,9 +1263,14 @@ namespace Grimoire.Settings.Migrations
                     b.Navigation("Reactions");
                 });
 
+            modelBuilder.Entity("Grimoire.Domain.Pardon", b =>
+                {
+                    b.Navigation("ReasonHistory");
+                });
+
             modelBuilder.Entity("Grimoire.Domain.Sin", b =>
                 {
-                    b.Navigation("Pardons");
+                    b.Navigation("Pardon");
 
                     b.Navigation("PublishMessages");
 

@@ -23,7 +23,7 @@ Do the standard preflight from `00-environment.md` first. Also:
   Embed Links or Attach Files.
 - Tables (EF defaults; adjust to your schema). `GrimoireDbContext`: `Messages`, `MessageHistory` (created, edited,
   deleted and deleted-by-moderator entries), `Attachments`, `Reactions`, `OldLogMessages` (log posts waiting to be
-  purged), `Avatars`, `NicknameHistory`, `UsernameHistory`. `GrimoireSettingsDbContext`: the log channel settings and
+  purged), `Avatars`, `ServerDisplayNameHistory` (was `NicknameHistory`, spec 2.3), `UsernameHistory`. `GrimoireSettingsDbContext`: the log channel settings and
   `MessageLogChannelOverrides` (append-only: the newest row per channel wins).
 
 ## Behaviour summary (what the code does)
@@ -304,7 +304,7 @@ nothing when there is no row yet (the first one comes from the member sync in `M
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| LOG-160 | Nickname log `#userlog`; `user1` nicknamed "One" | Change to "Uno" | "Nickname Updated": Before "One", After "Uno" **[auto]** | `NicknameHistory` row "Uno" |
+| LOG-160 | Nickname log `#userlog`; `user1` nicknamed "One" | Change to "Uno" | "Nickname Updated": Before "One", After "Uno" **[auto]** | `ServerDisplayNameHistory` row "Uno" |
 | LOG-161 | `user1` has no nickname | Set "One" | Before "`None`", After "One" **[auto]** (KI-40 fixed) | Row |
 | LOG-162 | As LOG-160 | Clear the nickname | Before "Uno", After "`None`" **[auto]** `UserLogEventGapTests.LOG162_ClearingANickname_IsLoggedAsNone_AndStored` | Row with no nickname |
 | LOG-163 | As LOG-160 | Change "Uno" to "UNO" | Nothing **[auto]** `UserLogEventGapTests.LOG163_ACaseOnlyNicknameChange_IsNeitherLoggedNorStored` | No row |
@@ -334,7 +334,7 @@ Ticks every minute. Each tick:
    post that can't be deleted (already gone, channel deleted, Discord error) has its try count raised, and is forgotten
    after the third try.
 2. Deletes saved `Messages` created 31 or more days ago, with their history, attachments and reactions.
-3. Once on the first tick and then once a day, trims `Avatars`, `NicknameHistory` and `UsernameHistory` to the newest
+3. Once on the first tick and then once a day, trims `Avatars`, `ServerDisplayNameHistory` and `UsernameHistory` to the newest
    three per member (usernames per user).
 
 The module setting doesn't matter. To test by hand, backdate rows in SQL (`OldLogMessages.CreatedAt`,

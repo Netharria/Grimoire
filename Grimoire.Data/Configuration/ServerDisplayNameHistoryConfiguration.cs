@@ -9,18 +9,18 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Grimoire.Configuration;
 
-internal sealed class NicknameHistoryConfiguration : IEntityTypeConfiguration<NicknameHistory>
+internal sealed class ServerDisplayNameHistoryConfiguration : IEntityTypeConfiguration<ServerDisplayNameHistory>
 {
-    public void Configure(EntityTypeBuilder<NicknameHistory> builder)
+    public void Configure(EntityTypeBuilder<ServerDisplayNameHistory> builder)
     {
         builder.HasKey(x => new { x.UserId, x.GuildId, x.Timestamp });
-        builder.Property(x => x.Nickname)
+        builder.Property(x => x.DisplayName)
             .HasMaxLength(32)
             .IsRequired(false);
         builder.Property(x => x.Timestamp)
             .HasDefaultValueSql("now()");
 
-        builder.Property(e => e.Nickname)
+        builder.Property(e => e.DisplayName)
             .HasConversion(e => e.GetValueOrDefault().Value, value => Nickname.FromDatabase(value));
     }
 }

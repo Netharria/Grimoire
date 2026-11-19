@@ -46,12 +46,12 @@ pardons.
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| SIN-20 | `user1` has a warn | `mod` runs `/Pardon sin_id:n reason:"forgiven"` | "Pardoned": `**ID:** n **User:** user1` | `Pardons` row with mod and reason. `#modlog` "Pardon" embed: User, Sin Id, Moderator, Reason |
+| SIN-20 | `user1` has a warn | `mod` runs `/Pardon sin_id:n reason:"forgiven"` | "Pardoned": `**ID:** n **User:** user1` | `Pardons` row with mod and date; `PardonReasonHistory` row "forgiven". `#modlog` "Pardon" embed: User, Sin Id, Moderator, Reason |
 | SIN-21 | As SIN-20 | `/Pardon sin_id:n` with no reason | **Expected:** pardoned, Reason "None". **Actual:** the command throws, because an empty reason can't be created (KI-32) | none |
 | SIN-22 | none | `/Pardon sin_id:999` | "Could not find a sin with that ID." | none |
 | SIN-23 | A sin in Test-B | `/Pardon` its id in Test-A | "Could not find a sin with that ID." | none |
 | SIN-24 | A sin for a user with no username history (banned without ever joining) | `/Pardon` it | **Expected:** pardoned. **Actual:** "Could not find a sin with that ID." (KI-33) | none |
-| SIN-25 | A pardoned sin | `/Pardon` it again | Pardoned again; there is no "already pardoned" check | A second `Pardons` row |
+| SIN-25 | A pardoned sin | `/Pardon` it again | "Pardoned" again; the pardon keeps its first moderator and date (Q8) | One `Pardons` row; a second `PardonReasonHistory` row. **[auto]** `SinAdminTests.Pardon_Twice_KeepsThePardonAndAddsAReason` |
 | SIN-26 | none | `sin_id:abc` or `sin_id:0` | Argument error; nothing pardoned | none |
 | SIN-27 | none | `user1` (no Manage Messages) runs `/Pardon`, `/Forget` or `/Reason` | "You do not have the required permissions to use this command." | none |
 | SIN-28 | Moderation disabled | Run each | "This module is disabled in this server." | none |
@@ -103,7 +103,7 @@ be pardoned first (`/Unban` records nothing itself, KI-09).
 | SIN-74 | No ban log configured | `/Publish Ban` | Red "Failed to publish ban reason. Verify @Grimoire has access to send messages in the public ban log channel." (it isn't configured at all) | none |
 | SIN-75 | Ban log `#private`, which the bot can't send in | `/Publish Ban` | Discord refuses, so the bot-missing-permissions help is shown, not the SIN-74 text | none |
 | SIN-76 | A ban sin, not pardoned | `/Publish Unban sin_id:n` | "The ban must be pardoned first before the unban can be published." | none |
-| SIN-77 | The ban pardoned with "appealed" | `/Publish Unban sin_id:n` | "Unban" embed with the pardon's reason and date | `PublishedMessages` row (Unban) |
+| SIN-77 | The ban pardoned with "appealed" | `/Publish Unban sin_id:n` | "Unban" embed with the pardon's latest reason and its first date (Q8b) | `PublishedMessages` row (Unban) |
 | SIN-78 | A kick sin | `/Publish Kick sin_id:n` | "Kick" embed | `PublishedMessages` row (Kick) |
 | SIN-79 | A ban of a user with no username history | `/Publish Ban` | **Expected:** published with the user's current name. **Actual:** the command errors (KI-33) | none |
 | SIN-80 | none | `user1` runs `/Publish Ban`; Moderation disabled | Permission error; module disabled | none |
@@ -116,8 +116,8 @@ Automated in `Grimoire.IntegrationTests/Moderation/PublishTests.cs`.
    and doesn't count kicks.
 2. **Multi-page sin logs show only the last page** (KI-30). After the defer, every `ReplyAsync` edits the original
    response.
-3. **Pardon details mix two pardons**: "Pardoned by" takes the newest pardon's moderator but the oldest pardon's date.
-   This only matters if a sin can be pardoned twice (see A-15).
+3. ~~**Pardon details mix two pardons**~~ (defect 7). Fixed by spec 2.3: a sin has one pardon, so `/SinLog` names its
+   first moderator and date, and `/Publish Unban` uses that date with the latest reason (Q8b).
 
 4. **`/Pardon` without a reason throws** (KI-32). The reason defaults to `""`, which `ModerationReason.Create` rejects.
 5. **Pardon and Reason can't find sins of users with no username history** (KI-33). The username lookup doubles as

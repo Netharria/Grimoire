@@ -79,20 +79,20 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
                     Username = Username.Create(name),
                     Timestamp = start.AddMinutes(minutes)
                 });
-                seed.NicknameHistory.Add(new NicknameHistory
+                seed.ServerDisplayNameHistory.Add(new ServerDisplayNameHistory
                 {
                     UserId = userId,
                     GuildId = this.GuildId,
-                    Nickname = Nickname.Create($"nick-{name}").ShouldSucceed(),
+                    DisplayName = Nickname.Create($"nick-{name}").ShouldSucceed(),
                     Timestamp = start.AddMinutes(minutes)
                 });
             }
 
-            seed.NicknameHistory.Add(new NicknameHistory
+            seed.ServerDisplayNameHistory.Add(new ServerDisplayNameHistory
             {
                 UserId = userId,
                 GuildId = this.GuildId,
-                Nickname = null,
+                DisplayName = null,
                 Timestamp = start.AddMinutes(5)
             });
             await seed.SaveChangesAsync(TestContext.Current.CancellationToken);

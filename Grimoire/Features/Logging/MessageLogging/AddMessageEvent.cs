@@ -62,7 +62,6 @@ public sealed partial class AddMessageEvent(
                 new MessageCreatedEntry
                 {
                     MessageId = args.GetMessageId(),
-                    GuildId = args.Guild.GetGuildId(),
                     Content = args.Message.GetMessageContent(),
                     Timestamp = args.Message.CreationTimestamp
                 }

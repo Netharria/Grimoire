@@ -32,7 +32,6 @@ internal sealed class SinReasonHistoryConfiguration : IEntityTypeConfiguration<S
         builder.Property(e => e.Actor)
             .HasConversion<ModerationActorConverter>()
             .HasColumnName("ModeratorId")
-            .HasColumnType("numeric(20,0)")
             .IsRequired(false);
     }
 }

@@ -21,29 +21,29 @@ public sealed class UpdatedNicknameEvent(
         if (!await settingsModule.IsModuleEnabled(Module.UserLog, args.Guild.GetGuildId()).OrDefaultDuringMigration(false))
             return;
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var latest = await dbContext.NicknameHistory
+        var latest = await dbContext.ServerDisplayNameHistory
             .AsNoTracking()
             .Where(x => x.GuildId == args.Guild.GetGuildId() && x.UserId == args.Member.GetUserId())
             .OrderByDescending(x => x.Timestamp)
-            .Select(y => new { y.Nickname })
+            .Select(y => new { y.DisplayName })
             .FirstOrDefaultAsync();
 
         var after = Nickname.CreateIfNotEmpty(args.NicknameAfter);
 
         // A row with no nickname is a member without one; only a missing row means there's no history yet.
-        if (latest is not { Nickname: var currentNickname }
+        if (latest is not { DisplayName: var currentNickname }
             || currentNickname == after
             || (currentNickname.HasValue && after.HasValue
                                          && currentNickname.Value.Equals(after.Value,
                                              StringComparison.CurrentCultureIgnoreCase)))
             return;
 
-        await dbContext.NicknameHistory.AddAsync(
-            new NicknameHistory
+        await dbContext.ServerDisplayNameHistory.AddAsync(
+            new ServerDisplayNameHistory
             {
                 GuildId = args.Guild.GetGuildId(),
                 UserId = args.Member.GetUserId(),
-                Nickname = after,
+                DisplayName = after,
                 Timestamp = DateTimeOffset.UtcNow
             });
         await dbContext.SaveChangesAsync();

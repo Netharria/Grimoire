@@ -27,7 +27,7 @@ namespace Grimoire.Migrations
                     SinId = table.Column<long>(type: "bigint", nullable: false),
                     SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     Reason = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
-                    ModeratorId = table.Column<decimal>(type: "numeric(20,0)", nullable: true)
+                    ModeratorId = table.Column<long>(type: "bigint", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -48,46 +48,12 @@ namespace Grimoire.Migrations
                 WHERE trim("Reason") <> '';
                 """);
 
-            migrationBuilder.CreateIndex(
-                name: "IX_SinReasonHistory_SinId_SetAt",
-                table: "SinReasonHistory",
-                columns: new[] { "SinId", "SetAt" },
-                descending: new[] { false, true });
-
             migrationBuilder.DropColumn(
                 name: "Reason",
                 table: "Sins");
 
-            // ── Phase 2: Pardons composite PK ───────────────────────────────────────
-            // Add SetAt BEFORE copying from PardonDate and BEFORE changing the PK.
-            migrationBuilder.AddColumn<DateTimeOffset>(
-                name: "SetAt",
-                table: "Pardons",
-                type: "timestamp with time zone",
-                nullable: false,
-                defaultValue: new DateTimeOffset(new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)));
-
-            // Copy existing dates before PardonDate is dropped.
-            migrationBuilder.Sql("""UPDATE "Pardons" SET "SetAt" = "PardonDate";""");
-
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_Pardons",
-                table: "Pardons");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_Pardons",
-                table: "Pardons",
-                columns: new[] { "SinId", "SetAt" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Pardons_SinId_SetAt",
-                table: "Pardons",
-                columns: new[] { "SinId", "SetAt" },
-                descending: new[] { false, true });
-
-            migrationBuilder.DropColumn(
-                name: "PardonDate",
-                table: "Pardons");
+            // ── Phase 2 (removed by spec 2.3): pardons keep main's key, SinId (Q8). GrimoireSchema adds their
+            // reason history.
 
             // ── Phase 3: Trackers / Mutes FK ─────────────────────────────────────────
             migrationBuilder.DropForeignKey(
@@ -216,8 +182,8 @@ namespace Grimoire.Migrations
                 columns: table => new
                 {
                     Name = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: false),
-                    GuildId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    UserId = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
+                    GuildId = table.Column<long>(type: "bigint", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
                     UsedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -230,11 +196,6 @@ namespace Grimoire.Migrations
                 table: "CustomCommandUsages",
                 columns: new[] { "GuildId", "Name", "UsedAt" });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_CustomCommandUsages_GuildId_Name_UserId",
-                table: "CustomCommandUsages",
-                columns: new[] { "GuildId", "Name", "UserId" });
-
             migrationBuilder.AddForeignKey(
                 name: "FK_CustomCommandsRole_CustomCommands_Name_GuildId_CreatedAt",
                 table: "CustomCommandsRole",
@@ -243,26 +204,9 @@ namespace Grimoire.Migrations
                 principalColumns: new[] { "Name", "GuildId", "CreatedAt" },
                 onDelete: ReferentialAction.Cascade);
 
-            // ── Phase 5: MessageHistory discriminator ─────────────────────────────────
-            migrationBuilder.AddColumn<string>(
-                name: "Discriminator",
-                table: "MessageHistory",
-                type: "character varying(21)",
-                maxLength: 21,
-                nullable: false,
-                defaultValue: "");
-
-            // Backfill using old column names BEFORE Action is dropped and DeletedByModeratorId renamed.
-            migrationBuilder.Sql("""
-                UPDATE "MessageHistory"
-                SET "Discriminator" = CASE
-                    WHEN "Action" = 0 THEN 'Created'
-                    WHEN "Action" = 1 THEN 'Edited'
-                    WHEN "Action" = 2 AND "DeletedByModeratorId" IS NOT NULL THEN 'DeletedByModerator'
-                    ELSE 'Deleted'
-                END;
-                """);
-
+            // ── Phase 5: MessageHistory ──────────────────────────────────────────────
+            // Action stays an integer here: GrimoireSchema turns it into the Discriminator strings in the same
+            // rewrite as the bigint ids (Q9, spec 2.3), so the table is written once and never UPDATEd as a whole.
             migrationBuilder.AlterColumn<DateTimeOffset>(
                 name: "TimeStamp",
                 table: "MessageHistory",
@@ -271,10 +215,6 @@ namespace Grimoire.Migrations
                 oldClrType: typeof(DateTimeOffset),
                 oldType: "timestamp with time zone",
                 oldDefaultValueSql: "now()");
-
-            migrationBuilder.DropColumn(
-                name: "Action",
-                table: "MessageHistory");
 
             migrationBuilder.RenameColumn(
                 name: "MessageContent",
@@ -368,58 +308,14 @@ namespace Grimoire.Migrations
             // Delete Created rows (zero-XP user-join records, no longer used).
             migrationBuilder.Sql("""DELETE FROM "XpHistory" WHERE "Type" = 4;""");
 
-            // Convert Type from int to varchar(21) using a USING clause.
-            // PostgreSQL cannot implicitly cast integer → varchar; USING is required.
-            migrationBuilder.Sql("""
-                ALTER TABLE "XpHistory"
-                ALTER COLUMN "Type" TYPE character varying(21)
-                USING CASE "Type"
-                    WHEN 0 THEN 'Earned'
-                    WHEN 1 THEN 'Awarded'
-                    WHEN 2 THEN 'Reclaimed'
-                    WHEN 3 THEN 'Migrated'
-                    ELSE 'Earned'
-                END;
-                """);
-
-            // Create new XpHistory indexes (not tracked by EF because the old snapshot already
-            // listed them as present; the actual DB did not have them).
-            migrationBuilder.CreateIndex(
-                name: "IX_XpHistory_GuildId_Xp",
-                table: "XpHistory",
-                columns: new[] { "GuildId", "Xp" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_XpHistory_UserId_GuildId_Xp",
-                table: "XpHistory",
-                columns: new[] { "UserId", "GuildId", "Xp" });
+            // Type stays an integer here, and the index is built after the rewrite: GrimoireSchema converts Type
+            // in the same ALTER TABLE as the bigint ids, so the table is rewritten once (Q9, spec 2.3).
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             // ── Phase 7 reversal: XpHistory ───────────────────────────────────────────
-            migrationBuilder.DropIndex(
-                name: "IX_XpHistory_GuildId_Xp",
-                table: "XpHistory");
-
-            migrationBuilder.DropIndex(
-                name: "IX_XpHistory_UserId_GuildId_Xp",
-                table: "XpHistory");
-
-            // Convert Type from varchar back to integer using a USING clause.
-            migrationBuilder.Sql("""
-                ALTER TABLE "XpHistory"
-                ALTER COLUMN "Type" TYPE integer
-                USING CASE "Type"
-                    WHEN 'Earned'    THEN 0
-                    WHEN 'Awarded'   THEN 1
-                    WHEN 'Reclaimed' THEN 2
-                    WHEN 'Migrated'  THEN 3
-                    ELSE 0
-                END;
-                """);
-
             migrationBuilder.CreateIndex(
                 name: "IX_XpHistory_AwarderId_GuildId",
                 table: "XpHistory",
@@ -486,13 +382,6 @@ namespace Grimoire.Migrations
                 table: "MessageHistory",
                 newName: "MessageContent");
 
-            migrationBuilder.AddColumn<int>(
-                name: "Action",
-                table: "MessageHistory",
-                type: "integer",
-                nullable: false,
-                defaultValue: 0);
-
             migrationBuilder.AlterColumn<DateTimeOffset>(
                 name: "TimeStamp",
                 table: "MessageHistory",
@@ -501,10 +390,6 @@ namespace Grimoire.Migrations
                 defaultValueSql: "now()",
                 oldClrType: typeof(DateTimeOffset),
                 oldType: "timestamp with time zone");
-
-            migrationBuilder.DropColumn(
-                name: "Discriminator",
-                table: "MessageHistory");
 
             // ── Phase 4 reversal: CustomCommands ──────────────────────────────────────
             migrationBuilder.DropForeignKey(
@@ -632,31 +517,6 @@ namespace Grimoire.Migrations
                 onDelete: ReferentialAction.Restrict);
 
             // ── Phase 3 reversal: nothing (Trackers already recreated above) ──────────
-
-            // ── Phase 2 reversal: Pardons ─────────────────────────────────────────────
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_Pardons",
-                table: "Pardons");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Pardons_SinId_SetAt",
-                table: "Pardons");
-
-            migrationBuilder.AddColumn<DateTimeOffset>(
-                name: "PardonDate",
-                table: "Pardons",
-                type: "timestamp with time zone",
-                nullable: false,
-                defaultValueSql: "now()");
-
-            migrationBuilder.DropColumn(
-                name: "SetAt",
-                table: "Pardons");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_Pardons",
-                table: "Pardons",
-                column: "SinId");
 
             // ── Phase 1 reversal: SinReasonHistory ───────────────────────────────────
             migrationBuilder.DropTable(

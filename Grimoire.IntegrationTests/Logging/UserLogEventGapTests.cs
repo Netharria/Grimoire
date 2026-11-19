@@ -212,8 +212,8 @@ public sealed class UserLogEventGapTests(GrimoireCoreFactory database) : IAsyncL
         Field(embed, "Before").ShouldBe("Uno");
         Field(embed, "After").ShouldBe("`None`");
         var newest = await GrimoireTestBot.EventuallyAsync(() => this.NewestNicknameAsync(this.Guild.User1),
-            row => row is { Nickname: null });
-        newest.ShouldNotBeNull().Nickname.ShouldBeNull();
+            row => row is { DisplayName: null });
+        newest.ShouldNotBeNull().DisplayName.ShouldBeNull();
     }
 
     /// <summary>LOG-163: a change of case only is not a nickname change.</summary>
@@ -324,13 +324,13 @@ public sealed class UserLogEventGapTests(GrimoireCoreFactory database) : IAsyncL
     private async Task SeedNicknameAsync(FakeUser user, string nickname)
     {
         await using var seed = database.CreateDbContext();
-        await seed.NicknameHistory.Where(row => row.UserId == new UserId(user.Id) && row.GuildId == new GuildId(this.Guild.Id))
+        await seed.ServerDisplayNameHistory.Where(row => row.UserId == new UserId(user.Id) && row.GuildId == new GuildId(this.Guild.Id))
             .ExecuteDeleteAsync(Token);
-        seed.NicknameHistory.Add(new NicknameHistory
+        seed.ServerDisplayNameHistory.Add(new ServerDisplayNameHistory
         {
             UserId = new UserId(user.Id),
             GuildId = new GuildId(this.Guild.Id),
-            Nickname = Nickname.Create(nickname).ShouldSucceed(),
+            DisplayName = Nickname.Create(nickname).ShouldSucceed(),
             Timestamp = DateTimeOffset.UtcNow.AddMinutes(-1)
         });
         await seed.SaveChangesAsync(Token);
@@ -339,13 +339,13 @@ public sealed class UserLogEventGapTests(GrimoireCoreFactory database) : IAsyncL
     private async Task<int> NicknameRowsAsync()
     {
         await using var dbContext = database.CreateDbContext();
-        return await dbContext.NicknameHistory.CountAsync(Token);
+        return await dbContext.ServerDisplayNameHistory.CountAsync(Token);
     }
 
-    private async Task<NicknameHistory?> NewestNicknameAsync(FakeUser user)
+    private async Task<ServerDisplayNameHistory?> NewestNicknameAsync(FakeUser user)
     {
         await using var dbContext = database.CreateDbContext();
-        return await dbContext.NicknameHistory.AsNoTracking()
+        return await dbContext.ServerDisplayNameHistory.AsNoTracking()
             .Where(row => row.UserId == new UserId(user.Id) && row.GuildId == new GuildId(this.Guild.Id))
             .OrderByDescending(row => row.Timestamp).FirstOrDefaultAsync(Token);
     }

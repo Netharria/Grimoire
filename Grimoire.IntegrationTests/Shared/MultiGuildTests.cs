@@ -48,7 +48,7 @@ public sealed class MultiGuildTests(GrimoireCoreFactory database) : IAsyncLifeti
         var guilds = await GrimoireTestBot.EventuallyAsync(async () =>
         {
             await using var dbContext = database.CreateDbContext();
-            return await dbContext.NicknameHistory.Where(row => row.UserId == new UserId(this.A.User1.Id))
+            return await dbContext.ServerDisplayNameHistory.Where(row => row.UserId == new UserId(this.A.User1.Id))
                 .Select(row => row.GuildId).ToListAsync(Token);
         }, rows => rows.Count >= 2);
 

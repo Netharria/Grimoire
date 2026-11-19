@@ -6,7 +6,7 @@ Scope: XP gain (`GainUserXp`) and reward roles, `/Level`, `/Leaderboard`, `/Leve
 
 Source: `Grimoire/Features/Leveling/`, `Grimoire.Settings/Services/SettingsModule.Leveling.*.cs`,
 `Grimoire.Settings/Domain/LevelingSettingEntry.cs` and `Domain/Values/`, `Grimoire.Domain/XpHistory.cs`, and the
-`leaderboard_view` migration.
+`GrimoireSchema` migration, which creates `leaderboard_view` (spec 2.3).
 
 Do the standard preflight from `00-environment.md` first. Set the mod log to `#modlog` and run
 `/LevelSettings LogSet option:Select Channel channel:#levelup` before section A.
@@ -143,8 +143,8 @@ Automated in `Grimoire.IntegrationTests/Leveling/LevelAndLeaderboardTests.cs`.
 Gates: `RequireGuild`, `RequireModuleEnabled(Leveling)`; ephemeral rules as `/Level`. Options: Top (the 15 highest),
 Me, User (needs `user`). Me and User show 15 rows from five above the member, shifted up near the bottom. Rows read
 "**rank** @user **XP:** n", title "LeaderBoard", footer "Total Users N". The view ranks every user with any
-`XpHistory` row in the guild, including members who left, ignored members, and users whose XP is 0 after a reclaim.
-Ties get distinct ranks in no set order. The refresh task runs
+`XpHistory` row in the guild and a total above 0 (Q12b), including members who left and ignored members. A member
+reclaimed to 0 leaves the board. Ties rank by user id, so the order is the same on every refresh (defect 23, spec 2.3). The refresh task runs
 `REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_view` every 15 minutes.
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
@@ -160,7 +160,7 @@ Ties get distinct ranks in no set order. The refresh task runs
 | LVL-68 | XP in Test-A and Test-B | Top in Test-A | Test-A users only | **[auto]** `GetTopLeaderboardAsync_OnlyCountsUsersInRequestedGuild`, `GetUserCenteredLeaderboardAsync_OtherGuildUser_ReturnsNotFound` |
 | LVL-69 | View refreshed; `user2` then earns or is awarded XP | Top straight away | Old totals; `user2` missing if new | **[auto]** `Leaderboard_PicksUpNewXp_AfterTheRefreshTask` |
 | LVL-70 | LVL-69 done | Wait for the refresh tick (up to 15 min after startup, then every 15 min), or run the SQL | New totals | Debug log of the task run. **[auto]** as LVL-69 |
-| LVL-71 | `user1` reclaimed to 0; view refreshed | Top | `user1` still listed with XP 0 | none. **[auto]** `LevelAndLeaderboardGapTests.Leaderboard_KeepsAMemberReclaimedToZero` |
+| LVL-71 | `user1` reclaimed to 0; view refreshed | Top | `user1` not listed: members at 0 XP or less stay off the board (Q12b, spec 2.3) | none. **[auto]** `LevelAndLeaderboardGapTests.Leaderboard_LeavesOutAMemberReclaimedToZero` |
 | LVL-72 | Bot restarted | Check when the first refresh runs | About 15 min after startup; the random start delay doesn't move it (Code observations 8) | Startup log "Starting Background task LeaderboardRefreshBackgroundTask with delay ..." |
 | LVL-73 | DB down during a tick | Stop the DB container through a tick | Nothing in Discord | Error log; `#alerts` warning "LeaderboardRefreshBackgroundTask failed 1 time(s) in a row"; urgent after 3 |
 | LVL-74 | Leveling disabled | `/Leaderboard option:Top` | "This module is disabled in this server." | **[auto]** `LevelingCommands_NeedTheModule("leaderboard")` |

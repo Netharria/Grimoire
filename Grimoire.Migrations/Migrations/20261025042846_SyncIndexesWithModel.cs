@@ -169,12 +169,8 @@ namespace Grimoire.Migrations
                 table: "SpamFilterOverrides");
 
             // The model has declared these since ModelRedesign, but no migration ever created them.
-            // They replace IX_Sins_GuildId, IX_Sins_ModeratorId_GuildId and IX_Sins_UserId_GuildId above.
-            migrationBuilder.CreateIndex(
-                name: "IX_Sin_Id_GuildId",
-                table: "Sins",
-                columns: new[] { "Id", "GuildId" });
-
+            // They replace IX_Sins_GuildId, IX_Sins_ModeratorId_GuildId and IX_Sins_UserId_GuildId above. IX_Sin_Id_GuildId
+            // is no longer created: the primary key on Id serves it (Q6, spec 2.3).
             migrationBuilder.CreateIndex(
                 name: "IX_Sin_ModeratorId_GuildId_SinType",
                 table: "Sins",
@@ -195,10 +191,6 @@ namespace Grimoire.Migrations
 
             migrationBuilder.DropIndex(
                 name: "IX_Sin_ModeratorId_GuildId_SinType",
-                table: "Sins");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Sin_Id_GuildId",
                 table: "Sins");
 
             migrationBuilder.CreateIndex(

@@ -9,7 +9,7 @@ namespace Grimoire.DatabaseQueryHelpers;
 
 public static class MemberDatabaseQueryHelpers
 {
-    public static async Task<bool> AddMissingNickNameHistoryAsync(this DbSet<NicknameHistory> databaseNicknames,
+    public static async Task<bool> AddMissingNickNameHistoryAsync(this DbSet<ServerDisplayNameHistory> databaseNicknames,
         DiscordGuild discordGuild, CancellationToken cancellationToken = default)
     {
         var discordMembers = discordGuild.Members.Select(member => member.Value.GetUserId());
@@ -23,20 +23,20 @@ public static class MemberDatabaseQueryHelpers
             {
                 nicknameGroup.Key.UserId,
                 nicknameGroup.Key.GuildId,
-                nicknameGroup.OrderByDescending(nickName => nickName.Timestamp).First().Nickname
+                nicknameGroup.OrderByDescending(nickName => nickName.Timestamp).First().DisplayName
             })
             .AsAsyncEnumerable()
-            .Select(nickname => (nickname.UserId, nickname.GuildId, nickname.Nickname))
+            .Select(nickname => (nickname.UserId, nickname.GuildId, nickname.DisplayName))
             .ToHashSetAsync(cancellationToken: cancellationToken);
 
         var nicknamesToAdd = discordGuild.Members.Values
             .Where(x => !existingNicknames.Contains((x.GetUserId(), x.GetGuildId(), x.GetNickname())))
             .Select(x =>
-                new NicknameHistory
+                new ServerDisplayNameHistory
                 {
                     GuildId = x.GetGuildId(),
                     UserId = x.GetUserId(),
-                    Nickname = x.GetNickname(),
+                    DisplayName = x.GetNickname(),
                     Timestamp = DateTimeOffset.UtcNow
                 })
             .ToArray();

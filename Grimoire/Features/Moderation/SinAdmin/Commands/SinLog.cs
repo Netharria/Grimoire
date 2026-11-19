@@ -102,17 +102,10 @@ internal sealed class SinLog(IDbContextFactory<GrimoireDbContext> dbContextFacto
                 // ReSharper restore AccessToDisposedClosure
                 x.Actor,
                 // ReSharper disable AccessToDisposedClosure
-                Pardon = dbContext.Pardons.Any(p => p.SinId == x.Id),
-                PardonModeratorId = dbContext.Pardons
-                    .Where(p => p.SinId == x.Id)
-                    .OrderByDescending(p => p.SetAt)
-                    .Select(p => (ModeratorId?)p.ModeratorId)
-                    .FirstOrDefault(),
-                PardonDate = dbContext.Pardons
-                    .Where(p => p.SinId == x.Id)
-                    .OrderBy(p => p.SetAt)
-                    .Select(p => p.SetAt)
-                    .FirstOrDefault()
+                // Q8b: the pardon's own moderator and date, which a re-pardon doesn't change.
+                Pardon = x.Pardon != null,
+                PardonModeratorId = x.Pardon != null ? (ModeratorId?)x.Pardon.ModeratorId : null,
+                PardonDate = x.Pardon != null ? x.Pardon.SetAt : default
                 // ReSharper restore AccessToDisposedClosure
             }).ToListAsync();
         var stringBuilder = new StringBuilder(2048);

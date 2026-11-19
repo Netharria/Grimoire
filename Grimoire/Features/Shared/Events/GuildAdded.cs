@@ -25,7 +25,7 @@ internal sealed class GuildAdded(
             await dbContext.UsernameHistory.AddMissingUsernameHistoryAsync(eventArgs.Guild);
 
         var nicknamesUpdated =
-            await dbContext.NicknameHistory.AddMissingNickNameHistoryAsync(eventArgs.Guild);
+            await dbContext.ServerDisplayNameHistory.AddMissingNickNameHistoryAsync(eventArgs.Guild);
 
         var avatarsUpdated =
             await dbContext.Avatars.AddMissingAvatarsHistoryAsync(eventArgs.Guild);

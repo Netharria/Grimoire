@@ -93,9 +93,7 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
             seed.Pardons.Add(new Pardon
             {
                 SinId = sin.Id,
-                GuildId = this.GuildId,
                 ModeratorId = new ModeratorId(this.Guild.Admin.Id),
-                Reason = ModerationReason.Create("false positive").ShouldSucceed(),
                 SetAt = DateTimeOffset.UtcNow.AddMinutes(-20)
             });
             await seed.SaveChangesAsync(TestContext.Current.CancellationToken);

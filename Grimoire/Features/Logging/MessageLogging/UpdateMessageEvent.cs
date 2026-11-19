@@ -59,7 +59,6 @@ public sealed class UpdateMessageEvent(
         await dbContext.MessageHistory.AddAsync(new MessageEditedEntry
         {
             MessageId = message.MessageId,
-            GuildId = args.Guild.GetGuildId(),
             Content = args.Message.GetMessageContent(),
             Timestamp = DateTimeOffset.UtcNow
         });

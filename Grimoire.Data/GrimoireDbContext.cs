@@ -6,11 +6,6 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Data.Conventions;
-using Grimoire.Domain.Obsolete;
-#pragma warning disable CS0618 // Type or member is obsolete
-using Lock = Grimoire.Domain.Obsolete.Lock;
-
-#pragma warning restore CS0618 // Type or member is obsolete
 
 namespace Grimoire;
 
@@ -26,76 +21,25 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
 
     public DbSet<Avatar> Avatars { get; init; }
 
-    [Obsolete("Table To be Dropped Soon.")]
-    public DbSet<Channel> Channels { get; init; }
-
     public DbSet<CustomCommand> CustomCommands { get; init; }
 
     public DbSet<CustomCommandRole> CustomCommandsRole { get; init; }
 
     public DbSet<CustomCommandUsage> CustomCommandUsages { get; init; }
 
-    [Obsolete("Table To be Dropped Soon.")]
-    public DbSet<Guild> Guilds { get; init; }
-
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<GuildCommandsSettings> GuildCommandsSettings { get; init; }
-
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<GuildLevelSettings> GuildLevelSettings { get; init; }
-
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<GuildUserLogSettings> GuildUserLogSettings { get; init; }
-
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<GuildMessageLogSettings> GuildMessageLogSettings { get; init; }
-
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<GuildModerationSettings> GuildModerationSettings { get; init; }
-
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<IgnoredChannel> IgnoredChannels { get; init; }
-
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<IgnoredMember> IgnoredMembers { get; init; }
-
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<IgnoredRole> IgnoredRoles { get; init; }
-
     public DbSet<LeaderboardView> LeaderboardView { get; init; }
-
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<Lock> Locks { get; init; }
-
-    [Obsolete("Table to be deleted soon.")]
-    public DbSet<Member> Members { get; init; }
 
     public DbSet<Message> Messages { get; init; }
 
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<MessageLogChannelOverride> MessagesLogChannelOverrides { get; init; }
-
     public DbSet<MessageHistoryEntry> MessageHistory { get; init; }
 
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<Mute> Mutes { get; init; }
-
-    public DbSet<NicknameHistory> NicknameHistory { get; init; }
+    public DbSet<ServerDisplayNameHistory> ServerDisplayNameHistory { get; init; }
 
     public DbSet<OldLogMessage> OldLogMessages { get; init; }
 
     public DbSet<Pardon> Pardons { get; init; }
+
+    public DbSet<PardonReasonHistory> PardonReasonHistory { get; init; }
 
     public DbSet<ProxiedMessageLink> ProxiedMessages { get; init; }
 
@@ -103,23 +47,9 @@ public sealed class GrimoireDbContext(DbContextOptions<GrimoireDbContext> option
 
     public DbSet<PublishedMessage> PublishedMessages { get; init; }
 
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<Reward> Rewards { get; init; }
-
-    [Obsolete("Table to be deleted soon.")]
-    public DbSet<Role> Roles { get; init; }
-
     public DbSet<Sin> Sins { get; init; }
 
     public DbSet<SinReasonHistory> SinReasonHistory { get; init; }
-
-
-    [Obsolete("Use Settings Module Instead.")]
-    public DbSet<SpamFilterOverride> SpamFilterOverrides { get; init; }
-
-    [Obsolete("Table to be deleted soon.")]
-    public DbSet<User> Users { get; init; }
 
     public DbSet<UsernameHistory> UsernameHistory { get; init; }
 

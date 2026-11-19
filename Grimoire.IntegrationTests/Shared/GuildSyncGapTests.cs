@@ -100,13 +100,13 @@ public sealed class GuildSyncGapTests(GrimoireCoreFactory database) : IAsyncLife
         await using (var dbContext = this._database.CreateDbContext())
         {
             await dbContext.UsernameHistory.Where(row => row.UserId == user).ExecuteDeleteAsync(Token);
-            await dbContext.NicknameHistory.Where(row => row.UserId == user).ExecuteDeleteAsync(Token);
+            await dbContext.ServerDisplayNameHistory.Where(row => row.UserId == user).ExecuteDeleteAsync(Token);
             await dbContext.Avatars.Where(row => row.UserId == user).ExecuteDeleteAsync(Token);
             var earlier = DateTimeOffset.UtcNow.AddMinutes(-5);
             dbContext.UsernameHistory.Add(new UsernameHistory { UserId = user, Username = Username.Create("oldname"), Timestamp = earlier });
-            dbContext.NicknameHistory.Add(new NicknameHistory
+            dbContext.ServerDisplayNameHistory.Add(new ServerDisplayNameHistory
             {
-                UserId = user, GuildId = guild, Nickname = Nickname.Create("oldnick").ShouldSucceed(), Timestamp = earlier
+                UserId = user, GuildId = guild, DisplayName = Nickname.Create("oldnick").ShouldSucceed(), Timestamp = earlier
             });
             dbContext.Avatars.Add(new Avatar
             {
@@ -443,11 +443,11 @@ public sealed class GuildSyncGapTests(GrimoireCoreFactory database) : IAsyncLife
         // Stands in for a nickname set before the bot started: it replaces the sync's empty-nickname row.
         await using (var seed = this._database.CreateDbContext())
         {
-            await seed.NicknameHistory.Where(row => row.UserId == new UserId(this.A.User1.Id)).ExecuteDeleteAsync(Token);
-            seed.NicknameHistory.Add(new NicknameHistory
+            await seed.ServerDisplayNameHistory.Where(row => row.UserId == new UserId(this.A.User1.Id)).ExecuteDeleteAsync(Token);
+            seed.ServerDisplayNameHistory.Add(new ServerDisplayNameHistory
             {
                 UserId = new UserId(this.A.User1.Id), GuildId = new GuildId(this.A.Id),
-                Nickname = Nickname.Create("One").ShouldSucceed(), Timestamp = DateTimeOffset.UtcNow.AddMinutes(-1)
+                DisplayName = Nickname.Create("One").ShouldSucceed(), Timestamp = DateTimeOffset.UtcNow.AddMinutes(-1)
             });
             await seed.SaveChangesAsync(Token);
         }
@@ -455,9 +455,9 @@ public sealed class GuildSyncGapTests(GrimoireCoreFactory database) : IAsyncLife
         this.Leave(this.A, this.A.User1);
         this.Join(this.A, this.A.User1);
 
-        var newest = await GrimoireTestBot.EventuallyAsync(this.NewestNicknameOfUser1Async, row => row is { Nickname: null },
+        var newest = await GrimoireTestBot.EventuallyAsync(this.NewestNicknameOfUser1Async, row => row is { DisplayName: null },
             TimeSpan.FromSeconds(5));
-        newest.ShouldNotBeNull().Nickname.ShouldBeNull();
+        newest.ShouldNotBeNull().DisplayName.ShouldBeNull();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -557,20 +557,20 @@ public sealed class GuildSyncGapTests(GrimoireCoreFactory database) : IAsyncLife
     private async Task ForgetHistoryAsync(FakeGuild guild)
     {
         await using var dbContext = this._database.CreateDbContext();
-        await dbContext.NicknameHistory.Where(row => row.GuildId == new GuildId(guild.Id)).ExecuteDeleteAsync(Token);
+        await dbContext.ServerDisplayNameHistory.Where(row => row.GuildId == new GuildId(guild.Id)).ExecuteDeleteAsync(Token);
         await dbContext.Avatars.Where(row => row.GuildId == new GuildId(guild.Id)).ExecuteDeleteAsync(Token);
     }
 
     private async Task<int> NicknameRowsAsync(FakeGuild guild)
     {
         await using var dbContext = this._database.CreateDbContext();
-        return await dbContext.NicknameHistory.CountAsync(row => row.GuildId == new GuildId(guild.Id), Token);
+        return await dbContext.ServerDisplayNameHistory.CountAsync(row => row.GuildId == new GuildId(guild.Id), Token);
     }
 
-    private async Task<NicknameHistory?> NewestNicknameOfUser1Async()
+    private async Task<ServerDisplayNameHistory?> NewestNicknameOfUser1Async()
     {
         await using var dbContext = this._database.CreateDbContext();
-        return await dbContext.NicknameHistory.AsNoTracking()
+        return await dbContext.ServerDisplayNameHistory.AsNoTracking()
             .Where(row => row.UserId == new UserId(this.A.User1.Id) && row.GuildId == new GuildId(this.A.Id))
             .OrderByDescending(row => row.Timestamp).FirstOrDefaultAsync(Token);
     }
@@ -588,7 +588,7 @@ public sealed class GuildSyncGapTests(GrimoireCoreFactory database) : IAsyncLife
         await using var dbContext = this._database.CreateDbContext();
         var userId = new UserId(user.Id);
         return (await dbContext.UsernameHistory.CountAsync(row => row.UserId == userId, Token),
-            await dbContext.NicknameHistory.CountAsync(row => row.UserId == userId, Token),
+            await dbContext.ServerDisplayNameHistory.CountAsync(row => row.UserId == userId, Token),
             await dbContext.Avatars.CountAsync(row => row.UserId == userId, Token));
     }
 

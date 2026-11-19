@@ -401,7 +401,6 @@ public sealed class MessageLogEventsTests(GrimoireCoreFactory database) : IAsync
             seed.MessageHistory.Add(new MessageDeletedByModeratorEntry
             {
                 MessageId = new MessageId(messageId),
-                GuildId = new GuildId(this.Guild.Id),
                 ModeratorId = moderator,
                 Timestamp = DateTimeOffset.UtcNow
             });

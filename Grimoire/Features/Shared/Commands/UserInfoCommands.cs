@@ -100,13 +100,13 @@ internal sealed class UserInfoCommands(
             .Select(usernameHistory => usernameHistory.Username)
             .ToArrayAsync();
 
-        var nicknames = await dbContext.NicknameHistory
+        var nicknames = await dbContext.ServerDisplayNameHistory
             .Where(nicknameHistory => nicknameHistory.UserId == userId
                                       && nicknameHistory.GuildId == guildId)
-            .Where(nicknameHistory => nicknameHistory.Nickname != null)
+            .Where(nicknameHistory => nicknameHistory.DisplayName != null)
             .OrderByDescending(nicknameHistory => nicknameHistory.Timestamp)
             .Take(3)
-            .Select(nicknameHistory => nicknameHistory.Nickname!.Value.Value)
+            .Select(nicknameHistory => nicknameHistory.DisplayName!.Value.Value)
             .ToArrayAsync();
 
         embed.AddField("Usernames",
