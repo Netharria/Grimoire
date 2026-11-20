@@ -12,6 +12,8 @@ using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
+using Grimoire.Settings.Domain.Documents;
+using Grimoire.IntegrationTests.Database.SettingsLayer;
 
 namespace Grimoire.IntegrationTests.Leveling;
 
@@ -95,15 +97,15 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     {
         var author = situation == "bot" ? this.Guild.Bot : this.Guild.Moderator;
         var now = DateTimeOffset.UtcNow;
-        XpIgnoredItem? ignored = situation switch
+        XpTarget? ignored = situation switch
         {
-            "ignored member" => IgnoredMember.Create(new UserId(author.Id), this.GuildId, this.Owner, now),
-            "ignored role" => IgnoredRole.Create(new RoleId(this.Guild.ModeratorRoleId), this.GuildId, this.Owner, now),
-            "ignored channel" => IgnoredChannel.Create(new ChannelId(this.Guild.General.Id), this.GuildId, this.Owner, now),
+            "ignored member" => new XpTarget.Member(new UserId(author.Id)),
+            "ignored role" => new XpTarget.Role(new RoleId(this.Guild.ModeratorRoleId)),
+            "ignored channel" => new XpTarget.Channel(new ChannelId(this.Guild.General.Id)),
             _ => null
         };
         if (ignored is not null)
-            (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem> { ignored }, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
+            (await this.Settings.IgnoreXpAsync(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new System.Collections.Generic.HashSet<XpTarget> { ignored }, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
         if (situation == "module off")
             await this._bot.SetModuleAsync(Module.Leveling, false);
 
@@ -117,9 +119,9 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
     [Fact]
     public async Task AnIgnoredChannel_DoesNotAffectOtherChannels()
     {
-        (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem>
+        (await this.Settings.IgnoreXpAsync(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new System.Collections.Generic.HashSet<XpTarget>
         {
-            IgnoredChannel.Create(new ChannelId(this.Guild.ModLog.Id), this.GuildId, this.Owner, DateTimeOffset.UtcNow)
+            new XpTarget.Channel(new ChannelId(this.Guild.ModLog.Id))
         }, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         this._bot.SendMessage(this.Guild.User1, this.Guild.General, "hello");
@@ -260,8 +262,9 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         (await this.Settings.GetLevelingRewardsAsync(this.GuildId, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed()
             .Select(reward => reward.RoleId).ShouldBe([new RoleId(this.Guild.KickerRoleId)]);
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.Rewards.OfType<RewardRemoved>().SingleAsync(TestContext.Current.CancellationToken))
-            .SetBy.ShouldBe(new ModeratorId(this.Guild.Bot.Id));
+        // Spec 2.5: the removal is a new version of the rewards document, written by the bot.
+        (await SettingsRows.LatestDocument(settingsContext, this.GuildId, SettingsDocument.Rewards,
+            TestContext.Current.CancellationToken))!.SetBy.ShouldBe(new ModeratorId(this.Guild.Bot.Id));
     }
 
     /// <summary>X-2: once removed, the reward for a deleted role isn't removed or reported again.</summary>
@@ -284,7 +287,9 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         this._bot.Rest.Requests.Where(this._bot.IsModLogPost)
             .Count(request => request.Body?.Contains("level rewards were removed", StringComparison.Ordinal) == true).ShouldBe(1);
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.Rewards.OfType<RewardRemoved>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+        // One version to add the reward and one to remove it (spec 2.5).
+        (await SettingsRows.LatestDocument(settingsContext, this.GuildId, SettingsDocument.Rewards,
+            TestContext.Current.CancellationToken))!.Version.ShouldBe(2);
     }
 
     /// <summary>
@@ -364,8 +369,7 @@ public sealed class GainXpTests(GrimoireCoreFactory database) : IAsyncLifetime
         => (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, amount)).ShouldBeSaved();
 
     private async Task AddRewardAsync(ulong roleId, int level, string? message)
-        => (await this.Settings.SetRewardAsync(RewardAdded.Create(new RoleId(roleId), this.GuildId, level,
-            message is null ? null : RewardMessage.Create(message).ShouldSucceed(), this.Owner, DateTimeOffset.UtcNow).ShouldSucceed())).ShouldSucceed();
+        => (await this.Settings.SetRewardAsync(this.GuildId, this.Owner, new RewardEntry(new RoleId(roleId), level, message is null ? null : RewardMessage.Create(message).ShouldSucceed()))).ShouldSucceed();
 
     private Task<List<EarnedXp>> WaitForEarnedAsync(FakeUser user, int count, TimeSpan? window = null)
         => GrimoireTestBot.EventuallyAsync(async () =>

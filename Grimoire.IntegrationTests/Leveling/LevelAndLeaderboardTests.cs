@@ -257,8 +257,7 @@ public sealed class LevelAndLeaderboardTests(GrimoireCoreFactory database) : IAs
     }
 
     private async Task AddRewardAsync(ulong roleId, int level)
-        => (await this.Settings.SetRewardAsync(RewardAdded.Create(new RoleId(roleId), this.GuildId, level, null,
-            new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed())).ShouldSucceed();
+        => (await this.Settings.SetRewardAsync(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RewardEntry(new RoleId(roleId), level, null))).ShouldSucceed();
 
     private static string Field(JsonNode embed, string name)
         => embed["fields"]!.AsArray().Single(field => field!["name"]!.GetValue<string>() == name)!["value"]!.GetValue<string>();

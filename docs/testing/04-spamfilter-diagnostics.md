@@ -92,7 +92,8 @@ the owner and Administrators pass). Everyone sees the command. It has no `Requir
 with AntiSpam and Moderation both off. Outside a guild the permission check replies "This command can only be used in a
 server.". `channel` defaults to the current channel and takes any channel type, including categories and threads. The
 reply is public and purple. Nothing is posted to the mod log. Setting the value a channel already has replies the
-same as a change. Inherit is stored as a row, not deleted.
+same as a change. Overrides are entries in the guild's `SpamFilterOverrides` document in `Settings."GuildSettings"`
+(spec 2.5); "row" below means a channel's entry in the latest version. Inherit removes the entry.
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
@@ -103,7 +104,7 @@ same as a change. Inherit is stored as a row, not deleted.
 | SPAM-44 | none | `option:Never channel:<a thread>` **[auto]** `SpamFilterTests.Override_OfAThread_IsAccepted` | "Will now never filter spam messages from <thread> and its sub channels/threads." | Row for the thread |
 | SPAM-45 | none | `option:Never channel:<a category>` **[auto]** `SpamFilterOverrideTests.Override_OfACategory_IsAccepted` | Accepted; the channels under it stop being filtered (SPAM-20) | Row for the category |
 | SPAM-46 | `#general` already Never | `option:Never channel:#general` again **[auto]** `SpamFilterOverrideTests.Override_ToTheValueItAlreadyHas_RepliesTheSame_AndStoresNoNewRow` | The same "Will now never filter..." reply | No new row |
-| SPAM-47 | No override on `#spam` | `option:Inherit channel:#spam` **[auto]** `SpamFilterOverrideTests.Override_Inherit_OnAChannelWithNoOverride_StoresNoRow` | The Inherit reply | No new row (already Inherit) |
+| SPAM-47 | No override on `#spam` | `option:Inherit channel:#spam` **[auto]** `SpamFilterOverrideTests.Override_Inherit_OnAChannelWithNoOverride_StoresNoRow` | The Inherit reply | No new version (already Inherit) |
 | SPAM-48 | none | `mod` (no Manage Channels) runs it **[auto]** `SpamFilterTests.SpamFilter_NeedsManageChannels("override")` | "You do not have the required permissions to use this command." | No row |
 | SPAM-49 | A member with Manage Channels but not Manage Guild | Runs it **[auto]** `SpamFilterOverrideTests.Override_ByAMemberWithManageChannelsOnly_IsAllowed` | Allowed | Row saved |
 | SPAM-50 | AntiSpam disabled | `admin` runs `option:Never` **[auto]** `SpamFilterOverrideTests.Override_WithAntiSpamDisabled_IsRefused` | "This module is disabled in this server." (fixed, KI-60) | No row |
@@ -208,7 +209,9 @@ DIAG-41 and how the cache is read are manual only.
 Gates: the group's gates from section D. The ignore subcommands are a nested group. Only Check is automated for the
 gates, so check DIAG-63 and DIAG-64 by hand. `items` takes one or more roles or members (`items_0`, `items_1`, ...).
 @everyone is skipped. Any user can be added, in the guild or not. Add and Remove reply publicly in green and post
-"@admin: <same text>" to the mod log. Their warnings are ephemeral and yellow, with no mod log. View is public.
+"@admin: <same text>" to the mod log. Their warnings are ephemeral and yellow, with no mod log. View is public. The
+list is the guild's `DiagnosticsIgnores` document in `Settings."GuildSettings"` (spec 2.5); each change is a new
+version with who made it, and a role Discord deletes is removed in a version by the bot.
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|

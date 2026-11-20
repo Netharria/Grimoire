@@ -12,6 +12,7 @@ using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
 using XpOption = Grimoire.Features.Leveling.Awards.ReclaimUserXp.XpOption;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Leveling;
 
@@ -83,8 +84,7 @@ public sealed class AwardReclaimTests(GrimoireCoreFactory database) : IAsyncLife
 
     private async Task AwardFromTenToLevelFiveAsync()
     {
-        (await this.Settings.SetRewardAsync(RewardAdded.Create(new RoleId(this.Guild.KickerRoleId), this.GuildId, 3, null,
-            this.Owner, DateTimeOffset.UtcNow).ShouldSucceed())).ShouldSucceed();
+        (await this.Settings.SetRewardAsync(this.GuildId, this.Owner, new RewardEntry(new RoleId(this.Guild.KickerRoleId), 3, null))).ShouldSucceed();
         await this.SeedXpAsync(this.Guild.User1, 10);
 
         (await this.AwardAsync(this.Guild.User1, 100)).Description
@@ -137,9 +137,9 @@ public sealed class AwardReclaimTests(GrimoireCoreFactory database) : IAsyncLife
     [Fact]
     public async Task Award_ToAnIgnoredMember_IsAccepted()
     {
-        (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem>
+        (await this.Settings.IgnoreXpAsync(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new System.Collections.Generic.HashSet<XpTarget>
         {
-            IgnoredMember.Create(new UserId(this.Guild.User1.Id), this.GuildId, this.Owner, DateTimeOffset.UtcNow)
+            new XpTarget.Member(new UserId(this.Guild.User1.Id))
         }, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         (await this.AwardAsync(this.Guild.User1, 30)).Description

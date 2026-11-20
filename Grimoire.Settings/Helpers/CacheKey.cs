@@ -13,11 +13,6 @@ internal static class CacheKey
 {
     /// <summary>One entry per guild and document (spec 2.2, C13), so a disabled module's document is never cached.</summary>
     internal static string Document(SettingsDocument document, GuildId guildId) => $"Settings_{document}_{guildId}";
-    internal static string LevelingRewards(GuildId guildId) => $"LevelingRewards_{guildId}";
-    internal static string XpIgnoredItems(GuildId guildId) => $"XpIgnoredItems_{guildId}";
-    internal static string LogOverride(ChannelId channelId) => $"LogOverrides_{channelId}";
-    internal static string SpamFilterOverride(ChannelId channelId) => $"SpamFilterOverrides_{channelId}";
     internal static string ChannelLocks(GuildId guildId) => $"ChannelLocks_{guildId}";
     internal static string ThreadLocks(GuildId guildId) => $"ThreadLocks_{guildId}";
-    internal static string DiagnosticsIgnoredItems(GuildId guildId) => $"DiagnosticsIgnoredItems_{guildId}";
 }

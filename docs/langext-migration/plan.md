@@ -108,7 +108,7 @@ the rehearsal, runs last, after 2.5.
 | 2.1 | Production measurements **(done 2026-11-19, fd3c9c3, spec `specs/2.1-production-measurements.md`, results `measurements/2.1-results.md`)** | Q7: run the size query and the `EXPLAIN` plans from rollup part 6. This sets the time budget for 2.3. **Result:** the first deploy's migrations are estimated at about 6 minutes, the longest statement at about 2 minutes (`XpHistory`), against 30 minutes per statement and two hours in total. Both guards are 0. P-16's compaction is needed (3.14). |
 | 2.2 | Settings schema **(done 2026-11-19, a6ebe77, spec `specs/2.2-settings-schema.md`; the production equivalence check is still to run)** | TD-6 settings as JSON per module, with module states in their own `Modules` document (C13) (versioned, with who/when). TD-1 and TD-2 state rows for mutes and locks (they replace `ClosedAt` from 876e460). P-9 bigint. Q6 redundant index pairs. Migration of the legacy data into the new shapes. Decide what the 3 overdue mutes on production become (2.1). |
 | 2.3 | Grimoire schema **(done 2026-11-19, 8349ee0, spec `specs/2.3-grimoire-schema.md`; the production copy run is still to run)** | Q8 `Pardon` 1:1 plus `PardonReasonHistory`. Q11/D-19 column drops. Q10/D-20 obsolete types leave the model. TD-9 rename to `ServerDisplayNameHistory`. Q6 index pairs. P-9 bigint with the view recreated: tie-break (defect 23), names from the database (TD-9), 0 XP excluded (Q12b). Q9 string discriminators, rewritten once together with P-9. **Budget (2.1):** no statement over 15 minutes. Fold the `XpHistory."Type"` rewrite into P-9's rewrite of that table (one `ALTER TABLE`), and drop the `IX_XpHistory_GuildId_Xp` pair. Decide what a pardon with no reason becomes (24 of 38). |
-| 2.5 | Settings collections as documents | C14, DD-2. Rewards, XP exclusions, the message log and spam filter channel overrides, and the diagnostics ignores become versioned `jsonb` documents per guild in Settings `GuildSettings` (or a sibling table; the spec decides), written with 2.2's version race. Settings `Initial`'s legacy copy builds them from `main`'s tables, keeping only what is in force. The append-only tables, `Inherit`, the `Watched…` types and `RewardRemoved` go. `SettingsModule` keeps its public API, as in 2.2. **The spec decides:** one document per collection or fewer, how a reward's level is held before DD-7's `Level` exists, and what the cache entries become (feeds 3.1). |
+| 2.5 | Settings collections as documents **(done 2026-11-19, not yet committed, spec `specs/2.5-settings-collections.md`; the production equivalence check is still to run)** | C14, DD-2. Rewards, XP exclusions, the message log and spam filter channel overrides, and the diagnostics ignores become versioned `jsonb` documents per guild in Settings `GuildSettings` (or a sibling table; the spec decides), written with 2.2's version race. Settings `Initial`'s legacy copy builds them from `main`'s tables, keeping only what is in force. The append-only tables, `Inherit`, the `Watched…` types and `RewardRemoved` go. `SettingsModule` keeps its public API, as in 2.2. **The spec decides:** one document per collection or fewer, how a reward's level is held before DD-7's `Level` exists, and what the cache entries become (feeds 3.1). |
 | 2.4 | Rebuild and rehearse | Rebuild the dev database from `main`'s backup. Run both contexts' migrations against a copy of production. From 2.1: check that autovacuum is on (production's statistics were reset). The runbook ends with `ANALYZE`, plus `VACUUM` on `Messages` and `MessageHistory`. The fallback of migrating from the owner's machine sets `Command Timeout=1800` (spec 2.1 OQ-4). |
 
 ### Phase 3: feature ports
@@ -118,22 +118,22 @@ proposes UX changes in its spec.
 
 | § | Section | Decisions | KIs |
 |---|---------|-----------|-----|
-| 3.1 | Settings service | SET-1/2/3 typed cache (one entry per settings document since C13, spec 2.2, and the C14 documents), Q19 1-hour expiry, SET-10 fail-safe, KI-103, DD-10 | 103, 105 |
+| 3.1 | Settings service | SET-1/2/3 typed cache (one entry per settings document since C13, spec 2.2, and the C14 documents), Q19 1-hour expiry, SET-10 fail-safe, DD-10 (KI-103 fixed by 2.2 and 2.5) | 105 |
 | 3.2 | `/Warn` (the template command) | Q3b, C10 (reason required), T-1 shape, DD-4 | — |
 | 3.3 | Ban, Unban, Kick | MOD-1/2/3/4, Q30, Q32, KI-03 handoff, MOD-11 leak (defect 8), Q33 publish | — |
 | 3.4 | Mute processor | TD-1/3/4 (adds the outbox's retry columns by editing Settings `Initial`, spec 2.2), Q31, KI-55 order, MOD-6, `UserJoinedWhileMuted` replaced | 53 |
 | 3.5 | Lock processor (channels, threads, voice) | TD-1/2/3 (the same retry columns; an expiry records why it ended, which 2.2 dropped), permission capture, Q15 locked-thread handoff | 102, 112 |
 | 3.6 | Sins | SIN-1..6, Q8/8b, Q33, Q34/34b, Q36 as amended by C11 (text `/SinLog` DMs a non-moderator), DD-1 | — |
 | 3.7 | Spam filter | Q20, Q14b, Q35/SIN-12 through the mute processor | 63, 107 |
-| 3.8 | Diagnostics | SIN-14/15, the parts of D-23 that are already decided, DD-8 | — |
+| 3.8 | Diagnostics | SIN-14/15, the parts of D-23 that are already decided, DD-8 (2.5 added `DiagnosticsTarget` and the `DiagnosticsIgnoreList` document; what is left is the callers) | — |
 | 3.9 | `MessageCreated` pipeline | Q14, HOT-3/4, Q15 | — |
 | 3.10 | Message logging (edit, delete, bulk delete) | LOG-5 (Q39), defect 9, defects 12/13, DD-3 (message state) | 64, 69, 70, 104 |
 | 3.11 | User logging and last-known cache | LOG-1 `Diff`, Q17/17b/17d, TD-7, TD-8, TD-9 | 67, 68, 97 |
 | 3.12 | Reactions | Q16 single upsert, DD-3 (reaction state), DD-9 (`EmojiName`) | 72 (re-check) |
 | 3.13 | Log cleanup worker | Q38/LOG-6, streaming, DD-3 (retry state) | — |
-| 3.14 | XP gain and rewards | Q18 cooldown, Q41/41b, LVL-5 `PlanRewards`, P-16 ledger compaction (2.1: three members over 50,000 rows), DD-5, DD-7 | 74, 75, 76, 109 |
+| 3.14 | XP gain and rewards | Q18 cooldown, Q41 (Q41b's minimum level done in 2.5), LVL-5 `PlanRewards`, P-16 ledger compaction (2.1: three members over 50,000 rows) into a new `EarnedCompacted` entry, not `MigratedXp`, which means XP carried over from the previous bot, Anubis (owner, 2026-11-19), DD-5, DD-7 | 74, 75, 76, 109 |
 | 3.15 | `/Level`, Leaderboard, Award, Reclaim | TD-10, Q12, Q40, LVL-3/7, C11 (🔒 on private text use), DD-7 | 77, 79, 80, 81 |
-| 3.16 | Leveling settings and ignores | LVL-12, DD-8 | 73, 78 |
+| 3.16 | Leveling settings and ignores | LVL-12, DD-8 (2.5 added `XpTarget` and `XpExclusions.Excludes`; what is left is the callers) | 73, 78 |
 | 3.17 | Custom commands | CC-1..9, Q21 (and dropping `fuzzystrmatch`), Q42–45, C11 (❓ reaction for not found and not allowed), DD-6 | 87 (decide: case-insensitive names). Keep the fixes for 83–86, 88, 113 and 114 |
 | 3.18 | Log and moderation settings commands, Modules | — | 65, 66, 71 |
 | 3.19 | Guild sync and invites | DD-6 | 89, 90, 98, 100, 108, 116 |

@@ -15,6 +15,8 @@ using LanguageExt;
 using Microsoft.Extensions.DependencyInjection;
 using LogSetting = Grimoire.Features.Logging.Settings.LogSettingsCommands.Message.MessageLogSetting;
 using OverrideSetting = Grimoire.Features.Logging.Settings.LogSettingsCommands.Message.MessageLogOverrideSetting;
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Logging;
 
@@ -259,11 +261,15 @@ public sealed class MessageLogSettingsGapTests(GrimoireCoreFactory database) : I
         => this._bot.Rest.Requests.Count(request => this._bot.IsModLogPost(request)
                                                     && request.Json?["embeds"]?[0]?["description"]?.ToString() == description);
 
-    private async Task<List<MessageLogChannelOverride>> OverrideRowsAsync()
+    private sealed record OverrideRow(ChannelId ChannelId, MessageLogOverrideOption ChannelOption);
+
+    /// <summary>The overrides in the stored document, read past the cache (spec 2.5).</summary>
+    private async Task<List<OverrideRow>> OverrideRowsAsync()
     {
         await using var dbContext = database.CreateSettingsDbContext();
-        return await dbContext.MessageLogChannelOverrides.Where(row => row.GuildId == this.GuildId)
-            .ToListAsync(TestContext.Current.CancellationToken);
+        return (await SettingsRows.LatestParsed<MessageLogOverrides>(dbContext, this.GuildId,
+                TestContext.Current.CancellationToken))
+            .Channels.Pairs.Select(pair => new OverrideRow(pair.Key, pair.Value)).ToList();
     }
 
     private async Task<bool> MessageSavedAsync(ulong messageId)

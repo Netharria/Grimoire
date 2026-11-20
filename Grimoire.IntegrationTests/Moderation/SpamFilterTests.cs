@@ -11,6 +11,7 @@ using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Moderation;
 

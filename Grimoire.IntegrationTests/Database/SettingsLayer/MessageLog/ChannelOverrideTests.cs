@@ -5,6 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Settings.Domain.Documents;
+using static LanguageExt.Prelude;
+
 namespace Grimoire.IntegrationTests.Database.SettingsLayer.MessageLog;
 
 [Collection("Settings collection")]
@@ -116,7 +119,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
 
     /// <remarks>Cases: LOG-26.</remarks>
     [Fact]
-    public async Task RedundantWrite_ReturnsNotModified_NoNewRow()
+    public async Task RedundantWrite_ReturnsUnchanged_NoNewVersion()
     {
         await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog,
             TestContext.Current.CancellationToken);
@@ -128,14 +131,12 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
         result.ShouldBeUnchanged();
 
         await using var db = factory.CreateDbContext();
-        var count = await db.MessageLogChannelOverrides
-            .Where(x => x.ChannelId == _channelId && x.GuildId == _guildId)
-            .CountAsync(TestContext.Current.CancellationToken);
-        count.ShouldBe(1);
+        (await SettingsRows.LatestDocument(db, _guildId, SettingsDocument.MessageLogOverrides,
+            TestContext.Current.CancellationToken))!.Version.ShouldBe(1);
     }
 
     [Fact]
-    public async Task NewValue_InsertsRow_CacheUpdated()
+    public async Task NewValue_IsSaved_CacheCleared()
     {
         await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog,
             TestContext.Current.CancellationToken);
@@ -152,7 +153,7 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
     }
 
     [Fact]
-    public async Task GetAllOverriddenChannels_ExcludesInherit()
+    public async Task GetAllOverriddenChannels_LeavesOutAClearedOverride()
     {
         var neverChannel = new ChannelId(201UL);
         var inheritChannel = new ChannelId(202UL);
@@ -161,16 +162,15 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
             TestContext.Current.CancellationToken);
         await this._sut.SetChannelLogOverride(neverChannel, _guildId, _modId, MessageLogOverrideOption.NeverLog,
             TestContext.Current.CancellationToken);
-        await this._sut.SetChannelLogOverride(inheritChannel, _guildId, _modId, MessageLogOverrideOption.Inherit,
+        await this._sut.SetChannelLogOverride(inheritChannel, _guildId, _modId, MessageLogOverrideOption.NeverLog,
+            TestContext.Current.CancellationToken);
+        await this._sut.SetChannelLogOverride(inheritChannel, _guildId, _modId, None,
             TestContext.Current.CancellationToken);
 
         var overrides = await this._sut.GetAllOverriddenChannels(_guildId, TestContext.Current.CancellationToken)
-            .ToListAsync(TestContext.Current.CancellationToken);
+            .ShouldSucceed();
 
-        overrides.Count.ShouldBe(2);
-        overrides.ShouldContain(x => x.ChannelId == _channelId);
-        overrides.ShouldContain(x => x.ChannelId == neverChannel);
-        overrides.ShouldNotContain(x => x.ChannelId == inheritChannel);
+        overrides.Keys.ShouldBe([_channelId, neverChannel]);
     }
 
     /// <remarks>Cases: LOG-26.</remarks>
@@ -228,24 +228,27 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
             TestContext.Current.CancellationToken);
 
         var overrides = await this._sut.GetAllOverriddenChannels(_guildId, TestContext.Current.CancellationToken)
-            .ToListAsync(TestContext.Current.CancellationToken);
+            .ShouldSucceed();
 
         overrides.Count.ShouldBe(1);
-        overrides.Single().ChannelId.ShouldBe(_channelId);
+        overrides.Keys.Single().ShouldBe(_channelId);
     }
 
+    /// <summary>
+    ///     A version written straight to the database (as an edit by hand would be) is what a fresh module reads: the
+    ///     latest version decides, not the newest row per channel (spec 2.5).
+    /// </summary>
     [Fact]
-    public async Task SetChannelLogOverride_MultipleHistoricalRows_LatestWins()
+    public async Task TheLatestVersion_Decides()
     {
         await using (var db = factory.CreateDbContext())
         {
-            var t1 = DateTimeOffset.UtcNow.AddHours(-2);
-            var t2 = DateTimeOffset.UtcNow.AddHours(-1);
-            db.MessageLogChannelOverrides.Add(
-                MessageLogChannelOverride.Create(MessageLogOverrideOption.AlwaysLog, _channelId, _guildId, _modId, t1));
-            db.MessageLogChannelOverrides.Add(
-                MessageLogChannelOverride.Create(MessageLogOverrideOption.NeverLog, _channelId, _guildId, _modId, t2));
-            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+            await SettingsRows.AddNextVersion(db, _guildId,
+                MessageLogOverrides.Empty.With(_channelId, MessageLogOverrideOption.AlwaysLog),
+                TestContext.Current.CancellationToken);
+            await SettingsRows.AddNextVersion(db, _guildId,
+                MessageLogOverrides.Empty.With(_channelId, MessageLogOverrideOption.NeverLog),
+                TestContext.Current.CancellationToken);
         }
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
@@ -253,5 +256,25 @@ public sealed class ChannelOverrideTests(SettingsTestsFactory factory) : IAsyncL
             TestContext.Current.CancellationToken).ShouldSucceed();
 
         result.ShouldBeFalse();
+    }
+
+    /// <summary>KI-103 (spec 2.5): an unchanged write still clears the cache, so a direct edit becomes visible.</summary>
+    [Fact]
+    public async Task AnUnchangedWrite_StillClearsTheCache()
+    {
+        await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.AlwaysLog,
+            TestContext.Current.CancellationToken);
+        (await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>(),
+            TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeTrue();
+        await using (var db = factory.CreateDbContext())
+            await SettingsRows.AddNextVersion(db, _guildId,
+                MessageLogOverrides.Empty.With(_channelId, MessageLogOverrideOption.NeverLog),
+                TestContext.Current.CancellationToken);
+
+        (await this._sut.SetChannelLogOverride(_channelId, _guildId, _modId, MessageLogOverrideOption.NeverLog,
+            TestContext.Current.CancellationToken)).ShouldBeUnchanged();
+
+        (await this._sut.ShouldLogMessage(_channelId, _guildId, new Dictionary<ChannelId, ChannelId?>(),
+            TestContext.Current.CancellationToken)).ShouldSucceed().ShouldBeFalse();
     }
 }

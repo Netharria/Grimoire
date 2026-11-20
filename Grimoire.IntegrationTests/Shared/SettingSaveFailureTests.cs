@@ -134,7 +134,8 @@ public sealed class SettingSaveFailureTests(GrimoireCoreFactory database) : IAsy
     private async Task<T> WhileSettingsCannotBeSavedAsync<T>(Func<Task<T>> action)
     {
         await using var refusing = await database.RefuseSettingsInsertsAsync(
-            "GuildSettingRow", "MessageLogChannelOverride", "SpamFilterOverride");
+            // Every guild setting, the collections included, is a document in GuildSettings (spec 2.5).
+            "GuildSettingRow");
         return await action();
     }
 }

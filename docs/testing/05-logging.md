@@ -23,8 +23,10 @@ Do the standard preflight from `00-environment.md` first. Also:
   Embed Links or Attach Files.
 - Tables (EF defaults; adjust to your schema). `GrimoireDbContext`: `Messages`, `MessageHistory` (created, edited,
   deleted and deleted-by-moderator entries), `Attachments`, `Reactions`, `OldLogMessages` (log posts waiting to be
-  purged), `Avatars`, `ServerDisplayNameHistory` (was `NicknameHistory`, spec 2.3), `UsernameHistory`. `GrimoireSettingsDbContext`: the log channel settings and
-  `MessageLogChannelOverrides` (append-only: the newest row per channel wins).
+  purged), `Avatars`, `ServerDisplayNameHistory` (was `NicknameHistory`, spec 2.3), `UsernameHistory`. `SettingsDbContext`: the log channel settings and the
+  `MessageLogOverrides` document in `Settings."GuildSettings"` (spec 2.5): one versioned document per guild, holding
+  each overridden channel once. "Row" for an override below means the channel's entry in the latest version; Inherit
+  removes it.
 
 ## Behaviour summary (what the code does)
 
@@ -93,9 +95,9 @@ with buttons.
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| LOG-20 | none | `admin` runs `/Log Message Override option:Never channel:#spam` | "Will now never log messages from #spam and its sub channels/threads." | `MessageLogChannelOverrides` row NeverLog. `#modlog` entry as above **[auto]** |
+| LOG-20 | none | `admin` runs `/Log Message Override option:Never channel:#spam` | "Will now never log messages from #spam and its sub channels/threads." | `MessageLogOverrides` entry NeverLog. `#modlog` entry as above **[auto]** |
 | LOG-21 | LOG-20 done | `user1` posts in `#spam`, then deletes it | Nothing in `#messagelog` **[auto]** | No `Messages` row |
-| LOG-22 | LOG-20 done | `option:Inherit channel:#spam`; post and delete again | "Override was successfully removed from the channel."; the delete is logged **[auto]** | New Inherit row; `Messages` row |
+| LOG-22 | LOG-20 done | `option:Inherit channel:#spam`; post and delete again | "Override was successfully removed from the channel."; the delete is logged **[auto]** | The entry removed (a new version); `Messages` row |
 | LOG-23 | `#general`'s category set Never | `option:Always channel:<thread in #general>`; post in the thread and in `#general` | "Will now always log messages from <thread> and its sub channels/threads." The thread message is saved; the `#general` one is not **[auto]** (thread over parent) | Row AlwaysLog |
 | LOG-24 | Category set Never, nothing on `#general` | Post in `#general` and in a thread of it | Neither saved (inherited through two levels) **[auto]** (Settings tests) | none |
 | LOG-25 | none | Run Override in `#spam` with no `channel` | The override applies to `#spam` | Row for `#spam` **[auto]** `MessageLogSettingsGapTests.Override_WithoutAChannel_AppliesToTheCurrentChannel` |
@@ -110,7 +112,8 @@ with buttons.
 
 Automated in `Grimoire.IntegrationTests/Logging/MessageLogSettingsTests.cs` (`NeverOverride_StopsLogging_AndInheritRestoresIt`,
 `AlwaysOverrideOnAThread_WinsOverItsParent`, `Override_IsLoggedToTheModLog`) and
-`Grimoire.IntegrationTests/Database/SettingsLayer/MessageLog/ChannelOverrideTests.cs` (tree walk, not-modified, latest row wins, guild isolation).
+`Grimoire.IntegrationTests/Database/SettingsLayer/MessageLog/ChannelOverrideTests.cs` (storage, not-modified, the cache, guild isolation); the tree walk itself is unit-tested in
+`Grimoire.UnitTests/SettingsLayer/Domain/CollectionChangeTests.cs`.
 
 ## D. `/Log User Set setting option [value]` and `/Log User View`
 

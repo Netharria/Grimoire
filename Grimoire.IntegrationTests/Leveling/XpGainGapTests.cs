@@ -12,6 +12,7 @@ using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Leveling;
 
@@ -273,9 +274,9 @@ public sealed class XpGainGapTests(GrimoireCoreFactory database) : IAsyncLifetim
         => (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, amount)).ShouldBeSaved();
 
     private async Task IgnoreChannelAsync(FakeChannel channel)
-        => (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new HashSet<XpTrackedItem>
+        => (await this.Settings.IgnoreXpAsync(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new System.Collections.Generic.HashSet<XpTarget>
         {
-            IgnoredChannel.Create(new ChannelId(channel.Id), this.GuildId, this.Owner, DateTimeOffset.UtcNow)
+            new XpTarget.Channel(new ChannelId(channel.Id))
         })).ShouldBeSaved();
 
     private async Task SeedEarnedAsync(FakeUser user, int xp, DateTimeOffset timeOut)

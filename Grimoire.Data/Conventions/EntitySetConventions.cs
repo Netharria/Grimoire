@@ -46,8 +46,9 @@ internal static class EntitySetConventions
     /// <summary>
     ///     Names every key, index and foreign key of the entity types <paramref name="include" /> picks explicitly,
     ///     with the name it has at this point: its configuration's, or else EF's default. EF makes these names unique across the whole model, ignoring schemas,
-    ///     so in the migrations context the Settings tables that share a name with a legacy public table (Mutes,
-    ///     Rewards, SpamFilterOverrides) would get a "1" on one side that the database doesn't have. An explicit
+    ///     so in the migrations context a Settings table that shares a name with a legacy public table (Mutes, since
+    ///     spec 2.5 dropped the Settings Rewards and SpamFilterOverrides) would get a "1" on one side that the
+    ///     database doesn't have. An explicit
     ///     name is left alone; and on its own each runtime model has the same names either way. Call last.
     /// </summary>
     public static ModelBuilder FixConstraintNames(this ModelBuilder modelBuilder, Func<Type, bool> include)

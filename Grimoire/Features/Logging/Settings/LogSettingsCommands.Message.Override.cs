@@ -7,7 +7,8 @@
 
 
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Documents;
+using LanguageExt;
 using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Logging.Settings;
@@ -39,11 +40,11 @@ public partial class LogSettingsCommands
 
             var (option, message) = overrideSetting switch
             {
-                MessageLogOverrideSetting.Always => (MessageLogOverrideOption.AlwaysLog,
+                MessageLogOverrideSetting.Always => (Some(MessageLogOverrideOption.AlwaysLog),
                     $"Will now always log messages from {channel.Mention} and its sub channels/threads."),
-                MessageLogOverrideSetting.Never => (MessageLogOverrideOption.NeverLog,
+                MessageLogOverrideSetting.Never => (Some(MessageLogOverrideOption.NeverLog),
                     $"Will now never log messages from {channel.Mention} and its sub channels/threads."),
-                MessageLogOverrideSetting.Inherit => (MessageLogOverrideOption.Inherit,
+                MessageLogOverrideSetting.Inherit => (Option<MessageLogOverrideOption>.None,
                     "Override was successfully removed from the channel."),
                 _ => throw new InvariantViolationException("Invalid message log override option.")
             };

@@ -9,6 +9,7 @@ using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Documents;
 using Grimoire.Settings.Domain.Values;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
@@ -28,7 +29,9 @@ public sealed partial class RewardCommandGroup
     public async Task AddAsync(CommandContext ctx,
         [Parameter("role")] [Description("The role to be added as a reward.")]
         DiscordRole role,
-        [MinMaxValue(0, int.MaxValue)] [Parameter("level")] [Description("The level the reward is awarded at.")]
+        [MinMaxValue(RewardEntry.MinimumLevel, int.MaxValue)]
+        [Parameter("level")]
+        [Description("The level the reward is awarded at.")]
         int level,
         [MinMaxLength(maxLength: 4096)]
         [Parameter("message")]
@@ -36,26 +39,16 @@ public sealed partial class RewardCommandGroup
         string? message = null)
     {
         await ctx.DeferResponseAsync();
-
         var guild = ctx.RequiredGuild;
-
         await ValidateBotCanGrant(guild, role)
             .Bind(_ => RewardMessage.CreateIfNotNull(message))
-            .Bind(validatedMessage =>
-                RewardAdded.Create(
-                    role.GetRoleId(),
-                    guild.GetGuildId(),
-                    level,
-                    validatedMessage.ToNullable(),
-                    ctx.GetModeratorId(),
-                    DateTimeOffset.UtcNow)
-            )
+            .Bind(validatedMessage => RewardEntry.Create(role.GetRoleId(), level, validatedMessage.ToNullable()))
             .ToFin()
-            .BindAsync(async reward => await this._settingsModule.SetRewardAsync(reward))
+            .BindAsync(reward => this._settingsModule.SetRewardAsync(guild.GetGuildId(), ctx.GetModeratorId(), reward))
             .Match(
-                reward => OnAddSuccess(ctx, reward, role, guild),
-                error => OnFail(ctx, error)
-            );
+                write => this.OnAddedAsync(ctx, guild,
+                    DescribeAdd(write, role.Mention, ctx.User.Mention, level)),
+                error => OnFail(ctx, error));
     }
 
     private static Validation<Error, DiscordRole> ValidateBotCanGrant(DiscordGuild guild, DiscordRole role)
@@ -73,19 +66,44 @@ public sealed partial class RewardCommandGroup
                 $"Was not able to update the rewards for the server:\n{error.Message}")
             .AsTask();
 
+    /// <summary>The reply to <c>/Rewards Add</c>, and the mod log line when something changed.</summary>
+    internal sealed record AddReply(DiscordColor Color, string Reply, string? Log);
 
-    private async Task OnAddSuccess(CommandContext ctx, RewardAdded reward, DiscordRole role, DiscordGuild guild)
+    /// <summary>
+    ///     Words what <c>/Rewards Add</c> did (spec 2.5, UX change 1). Rewards are only ever granted, so members who
+    ///     already have a moved reward keep it, and the reply says so.
+    /// </summary>
+    internal static AddReply DescribeAdd(Write<RewardChange> write, string role, string moderator, int level)
     {
-        var responseMessage =
-            $"Successfully updated the rewards to include {role.Mention} at level {reward.RewardLevel}.";
+        return write.Match(
+            saved: change => change switch
+            {
+                RewardChange.Added => new AddReply(GrimoireColor.Green,
+                    $"{role} is now a reward at level {level}.",
+                    $"{moderator} added {role} as a reward at level {level}."),
+                RewardChange.Moved moved => new AddReply(GrimoireColor.Green,
+                    $"{role} moved from level {moved.FromLevel} to level {level}. Members who already have it keep it.",
+                    $"{moderator} moved the {role} reward from level {moved.FromLevel} to level {level}."),
+                RewardChange.MessageChanged => new AddReply(GrimoireColor.Green,
+                    $"Updated the message for the {role} reward (level {level}).",
+                    $"{moderator} updated the message for the {role} reward (level {level})."),
+                _ => Unchanged()
+            },
+            unchanged: _ => Unchanged());
 
-        await ctx.ReplyAsync(GrimoireColor.DarkPurple, responseMessage);
-        await this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
-        {
-            GuildId = guild.GetGuildId(),
-            GuildLogType = GuildLogType.Moderation,
-            Color = GrimoireColor.DarkPurple,
-            Description = $"{ctx.User.Mention} updated the rewards to include {role.Mention} at level {reward.RewardLevel}."
-        });
+        AddReply Unchanged() => new(GrimoireColor.Yellow, $"{role} is already a reward at level {level}.", null);
+    }
+
+    private async Task OnAddedAsync(CommandContext ctx, DiscordGuild guild, AddReply reply)
+    {
+        await ctx.ReplyAsync(reply.Color, reply.Reply);
+        if (reply.Log is { } log)
+            await this._guildLog.SendLogMessageAsync(new GuildLogTextMessage
+            {
+                GuildId = guild.GetGuildId(),
+                GuildLogType = GuildLogType.Moderation,
+                Color = GrimoireColor.DarkPurple,
+                Description = log
+            });
     }
 }

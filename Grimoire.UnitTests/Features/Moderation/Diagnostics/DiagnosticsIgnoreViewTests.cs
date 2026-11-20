@@ -7,23 +7,18 @@
 
 using DSharpPlus.Entities;
 using Grimoire.Features.Moderation.Diagnostics;
-using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.UnitTests.Features.Moderation.Diagnostics;
 
 /// <summary>KI-62: <c>/Diagnostics Ignore View</c> must never cut a mention, however long the list is.</summary>
 public sealed class DiagnosticsIgnoreViewTests
 {
-    private static readonly GuildId Guild = new(1);
-    private static readonly ModeratorId Moderator = new(2);
+    private static DiagnosticsTarget IgnoredRole(int index)
+        => new DiagnosticsTarget.Role(new RoleId(1_000_000_000_000_000_000 + (ulong)index));
 
-    private static DiagnosticsIgnoredItem IgnoredRole(int index)
-        => DiagnosticsIgnoredRole.Create(
-            new RoleId(1_000_000_000_000_000_000 + (ulong)index), Guild, Moderator, DateTimeOffset.UnixEpoch);
-
-    private static DiagnosticsIgnoredItem IgnoredMember(int index)
-        => DiagnosticsIgnoredMember.Create(
-            new UserId(1_000_000_000_000_000_000 + (ulong)index), Guild, Moderator, DateTimeOffset.UnixEpoch);
+    private static DiagnosticsTarget IgnoredMember(int index)
+        => new DiagnosticsTarget.Member(new UserId(1_000_000_000_000_000_000 + (ulong)index));
 
     private static List<(string Name, string Value)> Fields(DiscordEmbed page)
         => [.. page.Fields.ShouldNotBeNull().Select(field => (field.Name.ShouldNotBeNull(), field.Value.ShouldNotBeNull()))];
@@ -40,7 +35,7 @@ public sealed class DiagnosticsIgnoreViewTests
     [Fact]
     public void A_list_too_long_for_one_embed_is_split_into_pages_of_whole_mentions()
     {
-        List<DiagnosticsIgnoredItem> items =
+        List<DiagnosticsTarget> items =
             [.. Enumerable.Range(0, 400).Select(IgnoredRole), .. Enumerable.Range(0, 300).Select(IgnoredMember)];
 
         var built = DiagnosticsCommands.IgnoreCommands.ViewPages(items).Select(page => page.Build()).ToList();
@@ -57,8 +52,8 @@ public sealed class DiagnosticsIgnoreViewTests
 
         var shown = pages.SelectMany(fields => fields).SelectMany(field => field.Value.Split(' ')).ToList();
         shown.ShouldBe([
-            .. items.OfType<DiagnosticsIgnoredRole>().Select(role => $"<@&{role.RoleId.Value}>"),
-            .. items.OfType<DiagnosticsIgnoredMember>().Select(member => $"<@{member.UserId.Value}>")
+            .. items.OfType<DiagnosticsTarget.Role>().Select(role => $"<@&{role.Id.Value}>"),
+            .. items.OfType<DiagnosticsTarget.Member>().Select(member => $"<@{member.Id.Value}>")
         ]);
         pages.SelectMany(fields => fields).Select(field => field.Name).Distinct()
             .ShouldBe(["Roles", "Roles (continued)", "Members", "Members (continued)"]);

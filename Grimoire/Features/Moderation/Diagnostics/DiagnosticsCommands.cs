@@ -8,7 +8,7 @@
 using System.Collections.Frozen;
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Documents;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using JetBrains.Annotations;
@@ -54,7 +54,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
         {
             await ctx.DeferResponseAsync();
             var guild = ctx.RequiredGuild;
-            var (ignored, skipped) = ToIgnoredItems(items, guild, ctx.GetModeratorId());
+            var (ignored, skipped) = ToTargets(items, guild);
 
             if (ignored.Count == 0)
             {
@@ -63,7 +63,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
                 return;
             }
 
-            await (await this._settingsModule.AddDiagnosticsIgnoredItemsAsync(guild.GetGuildId(), ignored))
+            await (await this._settingsModule.AddDiagnosticsIgnoredItemsAsync(guild.GetGuildId(), ctx.GetModeratorId(), ignored))
                 .MatchAsync(
                     write => write.Match(
                         saved: added => this.ReportAsync(ctx, guild, added, "now ignored by the diagnostics", skipped),
@@ -80,7 +80,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
         {
             await ctx.DeferResponseAsync();
             var guild = ctx.RequiredGuild;
-            var (ignored, skipped) = ToIgnoredItems(items, guild, ctx.GetModeratorId());
+            var (ignored, skipped) = ToTargets(items, guild);
 
             if (ignored.Count == 0)
             {
@@ -88,7 +88,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
                 return;
             }
 
-            await (await this._settingsModule.RemoveDiagnosticsIgnoredItemsAsync(guild.GetGuildId(), ignored))
+            await (await this._settingsModule.RemoveDiagnosticsIgnoredItemsAsync(guild.GetGuildId(), ctx.GetModeratorId(), ignored))
                 .MatchAsync(
                     removed => this.ReportAsync(ctx, guild, removed, "no longer ignored by the diagnostics", skipped),
                     error => ctx.SendWarningResponseAsync(error.Message).AsTask());
@@ -101,7 +101,7 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
             await ctx.DeferResponseAsync();
 
             var items = await this._settingsModule.GetDiagnosticsIgnoredItemsAsync(ctx.RequiredGuild.GetGuildId())
-                .OrDefaultDuringMigration(FrozenSet<DiagnosticsIgnoredItem>.Empty);
+                .OrDefaultDuringMigration(FrozenSet<DiagnosticsTarget>.Empty);
 
             await ctx.ReplyPagesAsync(ViewPages(items));
         }
@@ -116,11 +116,11 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
         ///     The ignore list as embed fields: Roles, then Members, each split between mentions into
         ///     "(continued)" fields, and the fields split into as many pages as they need. KI-62.
         /// </summary>
-        internal static IReadOnlyList<DiscordEmbedBuilder> ViewPages(IReadOnlyCollection<DiagnosticsIgnoredItem> items)
+        internal static IReadOnlyList<DiscordEmbedBuilder> ViewPages(IReadOnlyCollection<DiagnosticsTarget> items)
             => [
                 .. PackFields([
-                    .. Section("Roles", items.OfType<DiagnosticsIgnoredRole>().Select(r => $"<@&{r.RoleId.Value}>")),
-                    .. Section("Members", items.OfType<DiagnosticsIgnoredMember>().Select(m => $"<@{m.UserId.Value}>"))
+                    .. Section("Roles", items.OfType<DiagnosticsTarget.Role>().Select(r => $"<@&{r.Id.Value}>")),
+                    .. Section("Members", items.OfType<DiagnosticsTarget.Member>().Select(m => $"<@{m.Id.Value}>"))
                 ]).Select(fields => fields.Aggregate(
                     new DiscordEmbedBuilder().WithTitle("Ignored by the diagnostics"),
                     (embed, field) => embed.AddField(field.Name, field.Value)))
@@ -155,21 +155,20 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
                 yield return page;
         }
 
-        private static (List<DiagnosticsIgnoredItem> Items, List<SnowflakeObject> Skipped) ToIgnoredItems(
-            IEnumerable<SnowflakeObject> items, DiscordGuild guild, ModeratorId moderator)
+        private static (List<DiagnosticsTarget> Items, List<SnowflakeObject> Skipped) ToTargets(
+            IEnumerable<SnowflakeObject> items, DiscordGuild guild)
         {
-            List<DiagnosticsIgnoredItem> ignored = [];
+            List<DiagnosticsTarget> ignored = [];
             List<SnowflakeObject> skipped = [];
-            var now = DateTimeOffset.UtcNow;
 
             foreach (var item in items)
                 switch (item)
                 {
                     case DiscordRole role when role.Id != guild.Id:
-                        ignored.Add(DiagnosticsIgnoredRole.Create(new RoleId(role.Id), guild.GetGuildId(), moderator, now));
+                        ignored.Add(new DiagnosticsTarget.Role(new RoleId(role.Id)));
                         break;
                     case DiscordUser user:
-                        ignored.Add(DiagnosticsIgnoredMember.Create(new UserId(user.Id), guild.GetGuildId(), moderator, now));
+                        ignored.Add(new DiagnosticsTarget.Member(new UserId(user.Id)));
                         break;
                     default:
                         skipped.Add(item);
@@ -180,12 +179,12 @@ public sealed class DiagnosticsCommands(SettingsModule settingsModule)
         }
 
         private async Task ReportAsync(CommandContext ctx, DiscordGuild guild,
-            IReadOnlyList<DiagnosticsIgnoredItem> changed, string outcome, IReadOnlyList<SnowflakeObject> skipped)
+            IReadOnlyList<DiagnosticsTarget> changed, string outcome, IReadOnlyList<SnowflakeObject> skipped)
         {
             var mentions = string.Join(' ', changed.Select(item => item switch
             {
-                DiagnosticsIgnoredRole role => $"<@&{role.RoleId.Value}>",
-                DiagnosticsIgnoredMember member => $"<@{member.UserId.Value}>",
+                DiagnosticsTarget.Role role => $"<@&{role.Id.Value}>",
+                DiagnosticsTarget.Member member => $"<@{member.Id.Value}>",
                 _ => string.Empty
             }));
             var message = $"{mentions} {(changed.Count == 1 ? "is" : "are")} {outcome}."

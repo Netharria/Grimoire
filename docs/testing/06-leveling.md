@@ -23,11 +23,11 @@ Commands register with snake_case names: `/level_settings`, `log_set`, and the v
 | `/LevelSettings View` | ManageGuild | **no** (shows the state) | none | public embed | none |
 | `/LevelSettings Set setting value` | ManageGuild | yes | guild setting row | public | mod log |
 | `/LevelSettings LogSet option [channel]` | ManageGuild | yes | log channel setting | public | mod log |
-| `/Rewards Add role level [message]` | ManageGuild | yes | `RewardAdded` row | public | **leveling** log |
-| `/Rewards Remove role` | ManageGuild | yes | `RewardRemoved` row | public | **leveling** log |
+| `/Rewards Add role level [message]` | ManageGuild | yes | new `Rewards` document version | public | mod log (not when unchanged) |
+| `/Rewards Remove role` | ManageGuild | yes | new `Rewards` document version | public | mod log |
 | `/Rewards View` | ManageGuild | yes | none | public, paged | none |
 | `/Ignore Add [channel] [items]` | ManageGuild | yes | `Ignored*` rows | public, green | mod log |
-| `/Ignore Remove [channel] [items]` | ManageGuild | yes | `Watched*` rows | public, green | mod log |
+| `/Ignore Remove [channel] [items]` | ManageGuild | yes | new `XpExclusions` document version | public, green | mod log |
 | `/Ignore View` | ManageGuild | yes | none | public, paged | none |
 | `/Award user xp` | ManageMessages | yes | `XpHistory` Awarded row | public | mod log |
 | `/Reclaim user option [amount]` | ManageMessages | yes | `XpHistory` Reclaimed row | public | mod log |
@@ -108,8 +108,8 @@ bot, and reported once: "These level rewards were removed because their roles we
 | LVL-38 | Bot role loses Manage Roles | Reach a reward | Same guild issue as LVL-37 | none. **[auto]** `RewardGrantTests.ARewardWhileTheBotLacksManageRoles_IsReported` |
 | LVL-39 | Rewards at 2 (grantable) and 3 (above the bot) | Reach level 3 | `@L2` granted and logged; issue names only `@L3` | **[auto]** `ARewardTheBotCannotGrant_DoesNotBlockTheOthers` |
 | LVL-40 | `user1` is a Server Booster (managed role) | Reach a reward | Role granted; booster role kept | **[auto]** `AMemberWithAManagedRole_StillEarnsTheReward` |
-| LVL-41 | Rewards at 2 and 3; delete the level 2 role in Discord | `user1` posts | Level 3 role granted; `#modlog` issue "These level rewards were removed because their roles were deleted:" "**Level 2:** role `id`" | `RewardRemoved` row by the bot. **[auto]** `ARewardForADeletedRole_IsRemoved_TheModeratorsAreTold_AndTheOthersAreGranted` |
-| LVL-42 | LVL-41 done | Post again | No second issue | No second row. **[auto]** `ARewardForADeletedRole_IsOnlyRemovedOnce`, `ASecondRemovalOnTheSameDay_IsStillShown` |
+| LVL-41 | Rewards at 2 and 3; delete the level 2 role in Discord | `user1` posts | Level 3 role granted; `#modlog` issue "These level rewards were removed because their roles were deleted:" "**Level 2:** role `id`" | A new `Rewards` version without the role, written by the bot (one version for all such roles, spec 2.5). **[auto]** `ARewardForADeletedRole_IsRemoved_TheModeratorsAreTold_AndTheOthersAreGranted` |
+| LVL-42 | LVL-41 done | Post again | No second issue | No further version. **[auto]** `ARewardForADeletedRole_IsOnlyRemovedOnce`, `ASecondRemovalOnTheSameDay_IsStillShown` |
 | LVL-43 | `@everyone` added as a reward (see LVL-106) | Reach it | **Expected:** refused at Add. **Actual (suspected):** Discord refuses the grant with an error the loop doesn't catch, so the handler throws on every gain and later rewards in the loop are skipped (new, Code observations 3) | Check console for an unhandled exception. **[auto]** `RewardGrantTests.AnEveryoneReward_DoesNotStopTheOtherRewards` (skipped, KI-75; confirmed against the fake's 400) |
 | LVL-44 | Reward reached through `/Award` only | Award enough XP | No role yet; the role comes on the member's next earned message | none. **[auto]** `RewardGrantTests.ARewardReachedThroughAward_IsGrantedOnTheNextEarnedMessage` Also `AwardReclaimTests.Award_GrantsTheRewardOnlyOnTheNextEarnedMessage`. |
 
@@ -205,15 +205,16 @@ Automated in `Grimoire.IntegrationTests/Leveling/LevelSettingsTests.cs`.
 
 Gates: `RequireGuild`, `RequireModuleEnabled(Leveling)`, Manage Guild for all three (KI-45, fixed). Add refuses a
 managed role and a role at or above the bot's top role. It does not check that the bot has Manage Roles. `level` is
-0 or more; `message` is up to 4096 characters, trimmed, and may not be blank. Adding a role that is already a reward
-updates it. Add and Remove log to the **leveling** log. Errors are red, public, and start "Was not able to update the
+1 or more (Q41b, spec 2.5); `message` is up to 4096 characters, trimmed, and may not be blank. Adding a role that is
+already a reward moves or updates it, and the reply says which (spec 2.5, UX change 1). Each change is a new version of
+the guild's `Rewards` document. Add and Remove log to the mod log; an Add that changes nothing doesn't. Errors are red, public, and start "Was not able to update the
 rewards for the server:" (Code observations 9).
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| LVL-100 | none | `admin` runs `/Rewards Add role:@L2 level:2 message:"Well done"` | "Successfully updated the rewards to include @L2 at level 2." | `RewardAdded` row; same text in `#levelup`. **[auto]** `RewardCommandsTests.Add_StoresTheReward_AndLogsIt` |
-| LVL-101 | LVL-100 done | Add `@L2` at level 4 with no message | "... at level 4." | New row; View shows one entry for `@L2`, no message. **[auto]** `Add_ForARoleThatIsAlreadyAReward_UpdatesIt` |
-| LVL-102 | none | Add `level:0` | Accepted | Granted on any member's next earned message. **[auto]** `RewardCommandGapTests.Add_AtLevelZero_IsGrantedOnTheNextEarnedMessage` |
+| LVL-100 | none | `admin` runs `/Rewards Add role:@L2 level:2 message:"Well done"` | Green "@L2 is now a reward at level 2." | New `Rewards` version; `#modlog` "@admin added @L2 as a reward at level 2." **[auto]** `RewardCommandsTests.Add_StoresTheReward_AndLogsIt` |
+| LVL-101 | LVL-100 done | Add `@L2` at level 4 with no message | "@L2 moved from level 2 to level 4. Members who already have it keep it." | New version; `#modlog` "@admin moved the @L2 reward from level 2 to level 4."; View shows one entry for `@L2`, no message. Same role and level, new message: "Updated the message for the @L2 reward (level 4)." The same reward again: yellow "@L2 is already a reward at level 4.", no version, not logged **[auto]** `Add_ForARoleThatIsAlreadyAReward_UpdatesIt` |
+| LVL-102 | none | Add `level:0` | Discord's client refuses it (the option's minimum is 1, Q41b); sent anyway: "...:\nReward Level must be at least 1." | No version. **[auto]** `RewardCommandGapTests.Add_AtLevelZero_IsRefused` |
 | LVL-103 | none | Add the `higher` role | "Was not able to update the rewards for the server:\nGrimoire will not be able to apply this reward role because the role has the same or a higher rank than it does." | No row. **[auto]** `Add_ARoleAboveTheBot_IsRefused` |
 | LVL-104 | none | Add the bot's own role | Same as LVL-103 | **[auto]** `Add_ARoleLevelWithTheBot_IsRefused` |
 | LVL-105 | none | Add a managed role (Server Booster, a bot's role) | "...:\nThat role is managed by an integration, such as a bot or Server Booster, so it can't be given out." | No row. **[auto]** `Add_AManagedRole_IsRefused` |
@@ -225,8 +226,8 @@ rewards for the server:" (Code observations 9).
 | LVL-111 | No rewards | View | "Rewards" / "This server does not have any rewards." | **[auto]** `View_WithNoRewards_SaysSo` |
 | LVL-112 | A reward whose role was deleted, not yet cleaned up | View | Shown as a mention of the id | **[auto]** `View_ListsADeletedRoleByItsId` |
 | LVL-113 | Several rewards with 4096-character messages | View | Paged with buttons; each message whole | **[auto]** `View_WithLongRewardMessages_IsPaged_WithEachMessageWhole`, `PaginationTests.RewardsView_SecondPage_ShowsTheNextRewardWhole` |
-| LVL-114 | `@L2` is a reward | `/Rewards Remove role:@L2` | "@admin removed @L2 reward" | `RewardRemoved` row; same text in `#levelup`; members keep the role. **[auto]** `Remove_DeletesTheReward_AndLogsIt` |
-| LVL-115 | `@L3` is not a reward | Remove `@L3` | "...:\nDid not find a saved reward for @L3." | No row. **[auto]** `Remove_OfARoleThatIsNotAReward_IsRefused` |
+| LVL-114 | `@L2` is a reward | `/Rewards Remove role:@L2` | "@admin removed @L2 reward" | New `Rewards` version without `@L2`; same text in `#modlog`; members keep the role. **[auto]** `Remove_DeletesTheReward_AndLogsIt` |
+| LVL-115 | `@L3` is not a reward | Remove `@L3` | "...:\nDid not find a saved reward for @L3." | No version. **[auto]** `Remove_OfARoleThatIsNotAReward_IsRefused` |
 | LVL-116 | none | `mod` runs Add, Remove, View | "You do not have the required permissions to use this command." | none. **[auto]** `Add_ByAMemberWithoutManageGuild_IsRefused`, `Remove_ByAMemberWithoutManageGuild_IsRefused` |
 | LVL-117 | Leveling disabled | Add, Remove, View | "This module is disabled in this server." | **[auto]** `Rewards_NeedTheModule`, `Remove_NeedsTheModule` |
 | LVL-118 | Rewards in Test-B | View in Test-A | Test-A only | none. **[auto]** `LevelingGuildIsolationTests.RewardsInB_DoNotShowInA` |
@@ -236,19 +237,19 @@ Automated in `Grimoire.IntegrationTests/Leveling/RewardCommandsTests.cs`.
 ## G. `/Ignore Add | Remove | View`
 
 Gates: `RequireGuild`, `RequireModuleEnabled(Leveling)`, Manage Guild (KI-45, fixed). Add and Remove take an optional
-`channel` and up to 24 users or roles (KI-44, fixed). The `channel` option accepts any channel type. Each call appends
-rows; the newest row per id wins. Remove does not check the item was ignored. Replies are green and are logged to the
+`channel` and up to 24 users or roles (KI-44, fixed). The `channel` option accepts any channel type. Each change is a
+new version of the guild's `XpExclusions` document (spec 2.5); one that changes nothing stores nothing. Replies are green and are logged to the
 mod log.
 
 | ID | Precondition | Action | Expected Discord result | Expected DB / log |
 |----|--------------|--------|-------------------------|-------------------|
-| LVL-120 | none | `admin` runs `/Ignore Add items_0:user1 items_1:@mod-role` | "@user1 @mod-role are now ignored for xp gain." (any order) | `IgnoredMember` and `IgnoredRole` rows; `#modlog` same text; `user1` earns nothing. **[auto]** `IgnoreAndAwardTests.IgnoreAdd_StopsXp_AndIsLogged` |
-| LVL-121 | none | `/Ignore Add channel:#ignored` | "#ignored are now ignored for xp gain." | `IgnoredChannel` row. **[auto]** `Ignore_AChannel_CanBeAddedAndRemoved`, `Ignore_OffersAChannelOption` |
+| LVL-120 | none | `admin` runs `/Ignore Add items_0:user1 items_1:@mod-role` | "@user1 @mod-role are now ignored for xp gain." (any order) | Both in the `XpExclusions` document; `#modlog` same text; `user1` earns nothing. **[auto]** `IgnoreAndAwardTests.IgnoreAdd_StopsXp_AndIsLogged` |
+| LVL-121 | none | `/Ignore Add channel:#ignored` | "#ignored are now ignored for xp gain." | The channel in the document. **[auto]** `Ignore_AChannel_CanBeAddedAndRemoved`, `Ignore_OffersAChannelOption` |
 | LVL-122 | none | Add with no options | Yellow "Could not parse any ids from the submitted values." | none. **[auto]** `IgnoreAdd_WithNothingSelected_SaysSo` |
-| LVL-123 | `user1` ignored | Add `user1` again | "... were already ignored." (review X-12) | No new row; not logged. **[auto]** `IgnoreCommandTests.Add_SomeoneAlreadyIgnored_SaysSo_AndAddsNoRow` |
-| LVL-124 | `user1` ignored | `/Ignore Remove items_0:user1` | "@user1 are no longer ignored for xp gain." | `WatchedMember` row; `user1` earns again. **[auto]** `IgnoreRemove_LetsXpThroughAgain`, `IgnoreRemove_SaysWhatIsNoLongerIgnored` (KI-46, fixed) |
-| LVL-125 | `#ignored` ignored | Remove `channel:#ignored` | "#ignored are no longer ignored for xp gain." | `WatchedChannel` row. **[auto]** `Ignore_AChannel_CanBeAddedAndRemoved` |
-| LVL-126 | `user2` not ignored | Remove `user2` | "... were not ignored." (review X-12) | No row; not logged. **[auto]** `IgnoreCommandTests.Remove_SomeoneNotIgnored_SaysSo_AndRecordsNothing` |
+| LVL-123 | `user1` ignored | Add `user1` again | "... were already ignored." (review X-12) | No new version; not logged. **[auto]** `IgnoreCommandTests.Add_SomeoneAlreadyIgnored_SaysSo_AndAddsNoRow` |
+| LVL-124 | `user1` ignored | `/Ignore Remove items_0:user1` | "@user1 are no longer ignored for xp gain." | `user1` gone from the document; `user1` earns again. **[auto]** `IgnoreRemove_LetsXpThroughAgain`, `IgnoreRemove_SaysWhatIsNoLongerIgnored` (KI-46, fixed) |
+| LVL-125 | `#ignored` ignored | Remove `channel:#ignored` | "#ignored are no longer ignored for xp gain." | The channel gone from the document. **[auto]** `Ignore_AChannel_CanBeAddedAndRemoved` |
+| LVL-126 | `user2` not ignored | Remove `user2` | "... were not ignored." (review X-12) | No version; not logged. **[auto]** `IgnoreCommandTests.Remove_SomeoneNotIgnored_SaysSo_AndRecordsNothing` |
 | LVL-127 | One of each ignored | `/Ignore View` | "Ignored Channels Roles and Users.": "**Channels**", "**Roles**", "**Users**" sections with mentions | none. **[auto]** `IgnoreView_ListsChannelsRolesAndUsers` |
 | LVL-128 | Nothing ignored | View | "This server does not have any ignored channels, roles or users." | **[auto]** `IgnoreView_WithNothingIgnored_SaysSo` |
 | LVL-129 | Only users ignored | View | Empty Channels and Roles headings still shown | none. **[auto]** `IgnoreCommandTests.View_WithOnlyUsers_StillShowsTheEmptyHeadings` |

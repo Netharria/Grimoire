@@ -5,6 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Settings.Domain.Documents;
+using LanguageExt;
+using static LanguageExt.Prelude;
+
 namespace Grimoire.IntegrationTests.Database.SettingsLayer.Moderation;
 
 [Collection("Settings collection")]
@@ -19,12 +23,12 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
     public async ValueTask DisposeAsync() => await factory.ResetDatabase();
 
     [Fact]
-    public async Task NoRow_ReturnsInherit()
+    public async Task NoOverride_ReturnsNone()
     {
         var result = await this._sut
             .GetSpamFilterOverrideAsync(_guildId, _channelId, TestContext.Current.CancellationToken).ShouldSucceed();
 
-        result.ShouldBe(SpamFilterOverrideOption.Inherit);
+        result.ShouldBe(Option<SpamFilterOverrideOption>.None);
     }
 
     [Fact]
@@ -36,7 +40,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
         var result = await this._sut
             .GetSpamFilterOverrideAsync(_guildId, _channelId, TestContext.Current.CancellationToken).ShouldSucceed();
 
-        result.ShouldBe(SpamFilterOverrideOption.AlwaysFilter);
+        result.ShouldBe(Some(SpamFilterOverrideOption.AlwaysFilter));
     }
 
     [Fact]
@@ -48,11 +52,11 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
         var result = await this._sut
             .GetSpamFilterOverrideAsync(_guildId, _channelId, TestContext.Current.CancellationToken).ShouldSucceed();
 
-        result.ShouldBe(SpamFilterOverrideOption.NeverFilter);
+        result.ShouldBe(Some(SpamFilterOverrideOption.NeverFilter));
     }
 
     [Fact]
-    public async Task MultipleHistoricalRows_LatestWins()
+    public async Task AChangedOverride_ReadsTheNewValue()
     {
         await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId, SpamFilterOverrideOption.AlwaysFilter,
             TestContext.Current.CancellationToken);
@@ -63,11 +67,11 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
         var result = await freshSut
             .GetSpamFilterOverrideAsync(_guildId, _channelId, TestContext.Current.CancellationToken).ShouldSucceed();
 
-        result.ShouldBe(SpamFilterOverrideOption.NeverFilter);
+        result.ShouldBe(Some(SpamFilterOverrideOption.NeverFilter));
     }
 
     [Fact]
-    public async Task RedundantWrite_ReturnsNotModified_NoNewRow()
+    public async Task RedundantWrite_ReturnsUnchanged_NoNewVersion()
     {
         await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId, SpamFilterOverrideOption.AlwaysFilter,
             TestContext.Current.CancellationToken);
@@ -79,15 +83,13 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
         result.ShouldBeUnchanged();
 
         await using var db = factory.CreateDbContext();
-        var count = await db.SpamFilterOverrides
-            .Where(x => x.ChannelId == _channelId && x.GuildId == _guildId)
-            .CountAsync(TestContext.Current.CancellationToken);
-        count.ShouldBe(1);
+        (await SettingsRows.LatestDocument(db, _guildId, SettingsDocument.SpamFilterOverrides,
+            TestContext.Current.CancellationToken))!.Version.ShouldBe(1);
     }
 
     /// <remarks>Cases: XC-96.</remarks>
     [Fact]
-    public async Task NewValue_InsertsRow_CacheUpdated()
+    public async Task NewValue_IsSaved_CacheCleared()
     {
         await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId, SpamFilterOverrideOption.AlwaysFilter,
             TestContext.Current.CancellationToken);
@@ -99,33 +101,34 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
         result.ShouldSucceed();
 
         (await this._sut.GetSpamFilterOverrideAsync(_guildId, _channelId, TestContext.Current.CancellationToken))
-            .ShouldSucceed().ShouldBe(
-                SpamFilterOverrideOption.NeverFilter);
+            .ShouldSucceed().ShouldBe(Some(SpamFilterOverrideOption.NeverFilter));
     }
 
     [Fact]
-    public async Task GetAll_ExcludesInherit()
+    public async Task GetAll_LeavesOutAClearedOverride()
     {
         var inheritChannel = new ChannelId(201UL);
         await this._sut.SetSpamFilterOverrideAsync(_channelId, _guildId, _modId, SpamFilterOverrideOption.AlwaysFilter,
             TestContext.Current.CancellationToken);
-        await this._sut.SetSpamFilterOverrideAsync(inheritChannel, _guildId, _modId, SpamFilterOverrideOption.Inherit,
+        await this._sut.SetSpamFilterOverrideAsync(inheritChannel, _guildId, _modId, SpamFilterOverrideOption.NeverFilter,
+            TestContext.Current.CancellationToken);
+        await this._sut.SetSpamFilterOverrideAsync(inheritChannel, _guildId, _modId, None,
             TestContext.Current.CancellationToken);
 
         var overrides = await this._sut.GetAllSpamFilterOverrideAsync(_guildId, TestContext.Current.CancellationToken)
-            .ToListAsync(TestContext.Current.CancellationToken);
+            .ShouldSucceed();
 
         overrides.Count.ShouldBe(1);
-        overrides.Single().ChannelId.ShouldBe(_channelId);
+        overrides.Keys.Single().ShouldBe(_channelId);
     }
 
     [Fact]
     public async Task GetAll_EmptyGuild_ReturnsEmpty()
     {
         var overrides = await this._sut.GetAllSpamFilterOverrideAsync(_guildId, TestContext.Current.CancellationToken)
-            .ToListAsync(TestContext.Current.CancellationToken);
+            .ShouldSucceed();
 
-        overrides.ShouldBeEmpty();
+        overrides.IsEmpty.ShouldBeTrue();
     }
 
     [Fact]
@@ -150,11 +153,11 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
         var resultB = await this._sut
             .GetSpamFilterOverrideAsync(_guildId, channelB, TestContext.Current.CancellationToken).ShouldSucceed();
 
-        resultB.ShouldBe(SpamFilterOverrideOption.Inherit);
+        resultB.ShouldBe(Option<SpamFilterOverrideOption>.None);
     }
 
     [Fact]
-    public async Task GetSpamFilterOverride_SameChannelDifferentGuild_ReturnsInherit()
+    public async Task GetSpamFilterOverride_SameChannelDifferentGuild_ReturnsNone()
     {
         var guildB = new GuildId(2UL);
 
@@ -165,7 +168,7 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
         var result = await freshSut
             .GetSpamFilterOverrideAsync(guildB, _channelId, TestContext.Current.CancellationToken).ShouldSucceed();
 
-        result.ShouldBe(SpamFilterOverrideOption.Inherit);
+        result.ShouldBe(Option<SpamFilterOverrideOption>.None);
     }
 
     [Fact]
@@ -180,9 +183,9 @@ public sealed class SpamFilterOverrideTests(SettingsTestsFactory factory) : IAsy
             TestContext.Current.CancellationToken);
 
         var overrides = await this._sut.GetAllSpamFilterOverrideAsync(_guildId, TestContext.Current.CancellationToken)
-            .ToListAsync(TestContext.Current.CancellationToken);
+            .ShouldSucceed();
 
         overrides.Count.ShouldBe(1);
-        overrides.Single().ChannelId.ShouldBe(_channelId);
+        overrides.Keys.Single().ShouldBe(_channelId);
     }
 }

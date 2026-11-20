@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Frozen;
-using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Documents;
 using Grimoire.Settings.Services;
 
 namespace Grimoire.Features.Moderation.Diagnostics;
@@ -16,12 +16,12 @@ public sealed record DiagnosticsIgnores(IReadOnlySet<ulong> RoleIds, IReadOnlySe
 {
     public static DiagnosticsIgnores Empty { get; } = new(new HashSet<ulong>(), new HashSet<ulong>());
 
-    public static DiagnosticsIgnores From(IEnumerable<DiagnosticsIgnoredItem> items)
+    public static DiagnosticsIgnores From(IEnumerable<DiagnosticsTarget> items)
     {
         var all = items.ToList();
         return new DiagnosticsIgnores(
-            all.OfType<DiagnosticsIgnoredRole>().Select(role => role.RoleId.Value).ToFrozenSet(),
-            all.OfType<DiagnosticsIgnoredMember>().Select(member => member.UserId.Value).ToFrozenSet());
+            all.OfType<DiagnosticsTarget.Role>().Select(role => role.Id.Value).ToFrozenSet(),
+            all.OfType<DiagnosticsTarget.Member>().Select(member => member.Id.Value).ToFrozenSet());
     }
 }
 

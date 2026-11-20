@@ -12,6 +12,8 @@ using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Moderation;
 
@@ -51,8 +53,8 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
         var expected = $"{this.Guild.User1.Mention} is now ignored by the diagnostics.";
         reply.Description.ShouldBe(expected);
         reply.IsEphemeral.ShouldBeFalse();
-        (await this.StoredAsync()).Single().ShouldBeOfType<DiagnosticsIgnoredMember>().SetBy
-            .ShouldBe(new ModeratorId(this.Guild.Admin.Id));
+        (await this.StoredAsync()).Single().ShouldBeOfType<DiagnosticsTarget.Member>();
+        (await this.LastChangedByAsync()).ShouldBe(new ModeratorId(this.Guild.Admin.Id));
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>() == $"{this.Guild.Admin.MemberMention}: {expected}");
         this._bot.Rest.Unhandled.ShouldBeEmpty();
         this._bot.Logs.Errors.ShouldBeEmpty();
@@ -67,7 +69,7 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
 
         reply.Description.ShouldBe($"<@&{this.Guild.ModeratorRoleId}> is now ignored by the diagnostics.\n"
                                    + "Skipped 1 item(s) that are not roles or members.");
-        (await this.StoredAsync()).Single().ShouldBeOfType<DiagnosticsIgnoredRole>().RoleId
+        (await this.StoredAsync()).Single().ShouldBeOfType<DiagnosticsTarget.Role>().Id
             .ShouldBe(new RoleId(this.Guild.ModeratorRoleId));
     }
 
@@ -81,7 +83,7 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
             SlashOption.MentionableUser("items_0", this.Guild.User1), SlashOption.MentionableUser("items_1", this.Guild.Higher));
 
         reply.Description.ShouldBe($"{this.Guild.Higher.Mention} is now ignored by the diagnostics.");
-        (await this.StoredAsync()).OfType<DiagnosticsIgnoredMember>().Select(member => member.UserId.Value)
+        (await this.StoredAsync()).OfType<DiagnosticsTarget.Member>().Select(member => member.Id.Value)
             .ShouldBe([this.Guild.User1.Id, this.Guild.Higher.Id], ignoreOrder: true);
     }
 
@@ -103,7 +105,7 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
         var reply = await this.IgnoreAsync("add", SlashOption.MentionableRole("items_0", this.Guild.AdminRoleId));
 
         reply.Description.ShouldBe($"<@&{this.Guild.AdminRoleId}> is now ignored by the diagnostics.");
-        (await this.StoredAsync()).Single().ShouldBeOfType<DiagnosticsIgnoredRole>().RoleId.ShouldBe(new RoleId(this.Guild.AdminRoleId));
+        (await this.StoredAsync()).Single().ShouldBeOfType<DiagnosticsTarget.Role>().Id.ShouldBe(new RoleId(this.Guild.AdminRoleId));
     }
 
     /// <summary>DIAG-60: removing only @everyone is a private warning, with no mod log.</summary>
@@ -166,7 +168,7 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
 
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
             == $"The role **Temporary** (`{roleId}`) was deleted, so it is no longer ignored by the diagnostics.");
-        (await this.StoredAsync()).ShouldHaveSingleItem().ShouldBeOfType<DiagnosticsIgnoredMember>().UserId
+        (await this.StoredAsync()).ShouldHaveSingleItem().ShouldBeOfType<DiagnosticsTarget.Member>().Id
             .ShouldBe(new UserId(this.Guild.User1.Id));
         Fields(await this.IgnoreAsync("view"))["Roles"].ShouldBe("None");
         this._bot.Rest.Unhandled.ShouldBeEmpty();
@@ -197,12 +199,11 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
     [Fact]
     public async Task View_OfALongList_SplitsBetweenMentions_AndShowsThemAll()
     {
-        var now = DateTimeOffset.UtcNow;
         var roles = Enumerable.Range(0, 60)
-            .Select(DiagnosticsIgnoredItem (index) => DiagnosticsIgnoredRole.Create(
-                new RoleId(this.Guild.Id + 10_000 + (ulong)index), this.GuildId, new ModeratorId(this.Guild.Admin.Id), now))
+            .Select(DiagnosticsTarget (index) => new DiagnosticsTarget.Role(new RoleId(this.Guild.Id + 10_000 + (ulong)index)))
             .ToList();
-        (await this.Settings.AddDiagnosticsIgnoredItemsAsync(this.GuildId, roles, cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
+        (await this.Settings.AddDiagnosticsIgnoredItemsAsync(this.GuildId, new ModeratorId(this.Guild.Admin.Id), roles,
+            cancellationToken: TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         var fields = (await this.IgnoreAsync("view")).Embed!["fields"]!.AsArray()
             .Select(field => (Name: field!["name"]!.GetValue<string>(), Value: field["value"]!.GetValue<string>()))
@@ -214,14 +215,14 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
         roleFields.ShouldAllBe(field => field.Value.Split("<@&", StringSplitOptions.None).Length
                                         == WholeRoleMention().Matches(field.Value).Count + 1);
         roleFields.SelectMany(field => WholeRoleMention().Matches(field.Value).Select(match => match.Value))
-            .ShouldBe(roles.Cast<DiagnosticsIgnoredRole>().Select(role => $"<@&{role.RoleId.Value}>"), ignoreOrder: true);
+            .ShouldBe(roles.Cast<DiagnosticsTarget.Role>().Select(role => $"<@&{role.Id.Value}>"), ignoreOrder: true);
     }
 
     /// <summary>DIAG-69: when the list can't be saved, Add says so privately and logs nothing.</summary>
     [Fact]
     public async Task Add_WhenTheListCannotBeSaved_SaysSoPrivately()
     {
-        await using (await database.RefuseSettingsInsertsAsync(nameof(DiagnosticsIgnoredItem)))
+        await using (await database.RefuseSettingsInsertsAsync("GuildSettingRow"))
         {
             var reply = await this.IgnoreAsync("add", SlashOption.MentionableUser("items_0", this.Guild.User1));
 
@@ -255,10 +256,20 @@ public sealed partial class DiagnosticsIgnoreTests(GrimoireCoreFactory database)
         => this._bot.RunSlashCommandAndWaitAsync("diagnostics", this.Guild.Admin,
             SlashOption.Group("ignore", SlashOption.Subcommand(subcommand, items)));
 
-    private async Task<FrozenSet<DiagnosticsIgnoredItem>> StoredAsync()
+    /// <summary>The ignore list in the stored document, read past the cache (spec 2.5).</summary>
+    private async Task<IReadOnlySet<DiagnosticsTarget>> StoredAsync()
     {
         await using var context = database.CreateSettingsDbContext();
-        return (await context.DiagnosticsIgnoredItems.AsNoTracking().ToListAsync()).ToFrozenSet();
+        return (await SettingsRows.LatestParsed<DiagnosticsIgnoreList>(context, this.GuildId,
+            TestContext.Current.CancellationToken)).Targets;
+    }
+
+    /// <summary>Who wrote the latest version of the ignore list.</summary>
+    private async Task<ModeratorId?> LastChangedByAsync()
+    {
+        await using var context = database.CreateSettingsDbContext();
+        return (await SettingsRows.LatestDocument(context, this.GuildId, SettingsDocument.DiagnosticsIgnores,
+            TestContext.Current.CancellationToken))?.SetBy;
     }
 
     private static Dictionary<string, string> Fields(FakeReply reply)

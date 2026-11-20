@@ -15,6 +15,7 @@ using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
 
 using Grimoire.IntegrationTests.Database.SettingsLayer;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Shared;
 
@@ -282,17 +283,14 @@ public sealed class PaginationTests(GrimoireCoreFactory database) : IAsyncLifeti
     private async Task<IReadOnlyList<ulong>> IgnoreMembersAsync(int count)
     {
         var ids = Enumerable.Range(0, count).Select(i => 1_100_000_000_000_100_000 + (ulong)i).ToArray();
-        (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, ids
-            .Select(id => (XpTrackedItem)IgnoredMember.Create(new UserId(id), this.GuildId,
-                new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow))
+        (await this.Settings.IgnoreXpAsync(this.GuildId, new ModeratorId(this.Guild.Owner.Id), ids
+            .Select(XpTarget (id) => new XpTarget.Member(new UserId(id)))
             .ToHashSet())).ShouldBeSaved();
         return ids;
     }
 
     private async Task AddRewardAsync(ulong roleId, int level, string message)
-        => (await this.Settings.SetRewardAsync(RewardAdded.Create(new RoleId(roleId), this.GuildId, level,
-            Grimoire.Settings.Domain.Values.RewardMessage.Create(message).ShouldSucceed(),
-            new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed())).ShouldSucceed();
+        => (await this.Settings.SetRewardAsync(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RewardEntry(new RoleId(roleId), level, Grimoire.Settings.Domain.Values.RewardMessage.Create(message).ShouldSucceed()))).ShouldSucceed();
 
     /// <summary>
     ///     Makes <c>GET channels/{id}</c> answer for <paramref name="count" /> text channels the fake guild doesn't

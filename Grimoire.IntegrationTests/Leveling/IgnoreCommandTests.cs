@@ -10,6 +10,8 @@ using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Leveling;
 
@@ -60,7 +62,7 @@ public sealed class IgnoreCommandTests(GrimoireCoreFactory database) : IAsyncLif
 
         (await this.AddAsync(this.Guild.User1)).Description.ShouldBe($"<@{this.Guild.User1.Id}> were already ignored.");
 
-        (await this.TrackedRowsAsync(this.Guild.User1.Id)).ShouldHaveSingleItem().ShouldBeOfType<IgnoredMember>();
+        (await this.TrackedRowsAsync(this.Guild.User1.Id)).ShouldHaveSingleItem().ShouldBeOfType<XpTarget.Member>();
         (await this.Settings.GetAllIgnoredItems(this.GuildId, cancellationToken: TestContext.Current.CancellationToken)).ShouldSucceed().ShouldHaveSingleItem();
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
@@ -115,16 +117,12 @@ public sealed class IgnoreCommandTests(GrimoireCoreFactory database) : IAsyncLif
             .Where(option => option!["type"]!.GetValue<int>() == 9)
             .Select(option => option!["name"]!.GetValue<string>())];
 
-    private async Task<List<XpTrackedItem>> TrackedRowsAsync(ulong id)
+    /// <summary>The member's entry in the stored XP exclusions document, read past the cache (spec 2.5).</summary>
+    private async Task<List<XpTarget>> TrackedRowsAsync(ulong id)
     {
         await using var settings = database.CreateSettingsDbContext();
-        return (await settings.XpTrackedItems.AsNoTracking().Where(item => item.GuildId == this.GuildId).ToListAsync(Token))
-            .Where(item => item switch
-            {
-                IgnoredMember member => member.UserId.Value == id,
-                WatchedMember member => member.UserId.Value == id,
-                _ => false
-            })
+        return (await SettingsRows.LatestParsed<XpExclusions>(settings, this.GuildId, Token)).Targets
+            .Where(target => target == new XpTarget.Member(new UserId(id)))
             .ToList();
     }
 }

@@ -11,6 +11,7 @@ using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Shared;
 
@@ -135,9 +136,9 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
     {
         Field(await this.UserInfoAsync(this.Guild.User1), "Can Gain Xp").ShouldBe("Yes");
 
-        var ignored = IgnoredMember.Create(new UserId(this.Guild.User1.Id), this.GuildId, new ModeratorId(this.Guild.Owner.Id),
-            DateTimeOffset.UtcNow);
-        (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new System.Collections.Generic.HashSet<XpTrackedItem> { ignored }, TestContext.Current.CancellationToken)).ShouldBeSaved();
+        XpTarget ignored = new XpTarget.Member(new UserId(this.Guild.User1.Id));
+        (await this.Settings.IgnoreXpAsync(this.GuildId, new ModeratorId(this.Guild.Owner.Id),
+            new System.Collections.Generic.HashSet<XpTarget> { ignored }, TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         Field(await this.UserInfoAsync(this.Guild.User1), "Can Gain Xp").ShouldBe("No");
     }
@@ -146,9 +147,9 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
     [Fact]
     public async Task CanGainXp_IsNoForAMemberWithAnIgnoredRole()
     {
-        var ignored = IgnoredRole.Create(new RoleId(this.Guild.ModeratorRoleId), this.GuildId, new ModeratorId(this.Guild.Owner.Id),
-            DateTimeOffset.UtcNow);
-        (await this.Settings.AppendIgnoredItemsEvent(this.GuildId, new System.Collections.Generic.HashSet<XpTrackedItem> { ignored }, TestContext.Current.CancellationToken)).ShouldBeSaved();
+        XpTarget ignored = new XpTarget.Role(new RoleId(this.Guild.ModeratorRoleId));
+        (await this.Settings.IgnoreXpAsync(this.GuildId, new ModeratorId(this.Guild.Owner.Id),
+            new System.Collections.Generic.HashSet<XpTarget> { ignored }, TestContext.Current.CancellationToken)).ShouldBeSaved();
 
         Field(await this.UserInfoAsync(this.Guild.Moderator), "Can Gain Xp").ShouldBe("No");
     }
@@ -264,8 +265,7 @@ public sealed class UserInfoCommandTests(GrimoireCoreFactory database) : IAsyncL
     }
 
     private async Task AddRewardAsync(ulong roleId, int level)
-        => (await this.Settings.SetRewardAsync(RewardAdded.Create(new RoleId(roleId), this.GuildId, level, null,
-            new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed())).ShouldSucceed();
+        => (await this.Settings.SetRewardAsync(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RewardEntry(new RoleId(roleId), level, null))).ShouldSucceed();
 
     private async Task SeedSinsAsync(params (SinType Type, DateTimeOffset At)[] sins)
     {

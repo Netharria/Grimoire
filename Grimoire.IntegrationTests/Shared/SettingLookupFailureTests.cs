@@ -71,7 +71,7 @@ public sealed class SettingLookupFailureTests(GrimoireCoreFactory database) : IA
     [Fact]
     public async Task RewardsView_WhenTheRewardsCannotBeRead_SaysSoPrivately()
     {
-        var reply = await this.WhileUnreadableAsync("Reward", () =>
+        var reply = await this.WhileRewardsUnreadableAsync(() =>
             this._bot.RunSlashCommandAndWaitAsync("rewards", this.Guild.Admin, SlashOption.Subcommand("view")));
 
         reply.Description.ShouldBe("Could not load the rewards. Please try again later.");
@@ -82,7 +82,7 @@ public sealed class SettingLookupFailureTests(GrimoireCoreFactory database) : IA
     [Fact]
     public async Task Level_WhenTheRewardsCannotBeRead_StillShowsTheLevel()
     {
-        var reply = await this.WhileUnreadableAsync("Reward", () =>
+        var reply = await this.WhileRewardsUnreadableAsync(() =>
             this._bot.RunSlashCommandAndWaitAsync("level", this.Guild.User1));
 
         Field(reply.Embed!, "Level").ShouldBe("1");
@@ -93,7 +93,7 @@ public sealed class SettingLookupFailureTests(GrimoireCoreFactory database) : IA
     [Fact]
     public async Task UserInfo_WhenTheRewardsCannotBeRead_LeavesOutOnlyTheLevelFields()
     {
-        var reply = await this.WhileUnreadableAsync("Reward", () =>
+        var reply = await this.WhileRewardsUnreadableAsync(() =>
             this._bot.RunSlashCommandAndWaitAsync("user_info", this.Guild.Admin, SlashOption.User("user", this.Guild.User1)));
 
         FieldNames(reply.Embed!).ShouldBe(["Joined On", "Warns", "Mutes", "Bans"]);
@@ -103,7 +103,7 @@ public sealed class SettingLookupFailureTests(GrimoireCoreFactory database) : IA
     [Fact]
     public async Task GainingXp_WhenTheRewardsCannotBeRead_KeepsTheXp_AndDoesNotCrash()
     {
-        await this.WhileUnreadableAsync("Reward", async () =>
+        await this.WhileRewardsUnreadableAsync(async () =>
         {
             this._bot.SendMessage(this.Guild.User1, this.Guild.General, "hello");
             // The rewards lookup is the last read, after the XP is saved. Its failure is logged before it returns.
@@ -133,6 +133,28 @@ public sealed class SettingLookupFailureTests(GrimoireCoreFactory database) : IA
     private async Task<T> WhileUnreadableAsync<T>(string entityName, Func<Task<T>> action)
     {
         await using var unreadable = await database.MakeSettingsTablesUnreadableAsync(entityName);
+        return await action();
+    }
+
+    /// <summary>
+    ///     Makes only the rewards unreadable. Every guild setting is a document in one table since spec 2.5, so breaking
+    ///     the table would break the settings read before them too. A stored rewards document that doesn't parse fails
+    ///     the same way an outage does, and leaves the other documents readable.
+    /// </summary>
+    private async Task<T> WhileRewardsUnreadableAsync<T>(Func<Task<T>> action)
+    {
+        await using (var settings = database.CreateSettingsDbContext())
+        {
+            settings.GuildSettings.Add(new Grimoire.Settings.Rows.GuildSettingRow
+            {
+                GuildId = this.GuildId, Document = SettingsDocument.Rewards, Version = 1,
+                Value = """{"Roles": "unreadable"}""", SetBy = new ModeratorId(0), SetAt = DateTimeOffset.UtcNow
+            });
+            await settings.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await this._bot.Services.GetRequiredService<HybridCache>()
+            .RemoveAsync(CacheKey.Document(SettingsDocument.Rewards, this.GuildId), TestContext.Current.CancellationToken);
         return await action();
     }
 }

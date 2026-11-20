@@ -71,17 +71,4 @@ public sealed class IdConverterTests
     [Fact]
     public void ASinId_IsStoredAsItsOwnBigint()
         => RoundTrip(Converter<Sin>(nameof(Sin.Id)), new SinId(42)).ShouldBe(new SinId(42));
-
-    /// <summary>The Settings items keep a plain <c>ulong</c> id, stored as bigint by the same convention.</summary>
-    [Fact]
-    public void ASettingsItemsPlainId_IsStoredAsBigint()
-    {
-        using var context = new Grimoire.Settings.SettingsDbContext(
-            new DbContextOptionsBuilder<Grimoire.Settings.SettingsDbContext>().UseNpgsql("Host=unused")
-                .EnableServiceProviderCaching(false).Options);
-        var id = context.Model.FindEntityType(typeof(Grimoire.Settings.Domain.XpTrackedItem))!.FindProperty("Id")!;
-
-        id.GetColumnType().ShouldBe("bigint");
-        id.GetValueConverter()!.ConvertToProvider((ulong)long.MaxValue).ShouldBe(long.MaxValue);
-    }
 }

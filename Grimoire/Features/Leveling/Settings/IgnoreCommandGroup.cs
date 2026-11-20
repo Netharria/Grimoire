@@ -8,6 +8,8 @@
 using System.Collections.Frozen;
 using Grimoire.Features.Shared.Channels.GuildLog;
 using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Documents;
+using LanguageExt;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
@@ -29,12 +31,13 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
 
     /// <summary>
     ///     Records the channel and items as ignored or no longer ignored, then replies and logs what changed.
-    ///     <paramref name="create" /> builds the record for one item; <paramref name="outcome" /> finishes the sentence
-    ///     after the changed mentions, and <paramref name="unchangedOutcome" /> the one after those already in that state.
+    ///     <paramref name="write" /> is the settings write (ignore or unignore); <paramref name="outcome" /> finishes
+    ///     the sentence after the changed mentions, and <paramref name="unchangedOutcome" /> the one after those
+    ///     already in that state.
     /// </summary>
     private async Task UpdateIgnoredAsync(CommandContext ctx, DiscordChannel? channel, SnowflakeObject[]? items,
-        Func<SnowflakeObject, GuildId, ModeratorId, DateTimeOffset, XpTrackedItem> create, string outcome,
-        string unchangedOutcome)
+        Func<GuildId, ModeratorId, IReadOnlySet<XpTarget>, Task<Fin<Write<IReadOnlySet<XpTarget>>>>> write,
+        string outcome, string unchangedOutcome)
     {
         await ctx.DeferResponseAsync();
         var guild = ctx.RequiredGuild;
@@ -46,17 +49,15 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
             return;
         }
 
-        var tracked = combined
-            .Select(item => create(item, guild.GetGuildId(), ctx.GetModeratorId(), DateTimeOffset.UtcNow))
-            .ToFrozenSet();
-        await (await this._settingsModule.AppendIgnoredItemsEvent(guild.GetGuildId(), tracked)).Match(
+        var tracked = combined.Select(ToTarget).ToFrozenSet();
+        await (await write(guild.GetGuildId(), ctx.GetModeratorId(), tracked)).Match(
             write => write.Match(
                 saved: changed => ReportChangedAsync(changed),
                 unchanged: _ => ctx.ReplyAsync(GrimoireColor.Yellow,
                     $"{BuildIgnoreList(tracked)} {unchangedOutcome}").AsTask()),
             error => ctx.SendErrorResponseAsync(error).AsTask());
 
-        async Task ReportChangedAsync(IReadOnlySet<XpTrackedItem> changed)
+        async Task ReportChangedAsync(IReadOnlySet<XpTarget> changed)
         {
             var message = $"{BuildIgnoreList(changed)} {outcome}";
             var unchanged = tracked.Except(changed).ToArray();
@@ -73,15 +74,21 @@ public sealed partial class IgnoreCommandGroup(SettingsModule settingsModule, Gu
         }
     }
 
-    private static string BuildIgnoreList(IEnumerable<XpTrackedItem> items)
+    private static XpTarget ToTarget(SnowflakeObject item)
+        => item switch
+        {
+            DiscordUser => new XpTarget.Member(new UserId(item.Id)),
+            DiscordRole => new XpTarget.Role(new RoleId(item.Id)),
+            DiscordChannel => new XpTarget.Channel(new ChannelId(item.Id)),
+            _ => throw new InvariantViolationException($"Unexpected ignore option {item.GetType().Name}.")
+        };
+
+    private static string BuildIgnoreList(IEnumerable<XpTarget> items)
         => string.Join(' ', items.Select(item => item switch
         {
-            IgnoredChannel c => $"<#{c.ChannelId.Value}>",
-            IgnoredMember m => $"<@{m.UserId.Value}>",
-            IgnoredRole r => $"<@&{r.RoleId.Value}>",
-            WatchedChannel c => $"<#{c.ChannelId.Value}>",
-            WatchedMember m => $"<@{m.UserId.Value}>",
-            WatchedRole r => $"<@&{r.RoleId.Value}>",
+            XpTarget.Channel c => $"<#{c.Id.Value}>",
+            XpTarget.Member m => $"<@{m.Id.Value}>",
+            XpTarget.Role r => $"<@&{r.Id.Value}>",
             _ => throw new InvariantViolationException($"Unknown ignore item {item.GetType().Name}.")
         }));
 }

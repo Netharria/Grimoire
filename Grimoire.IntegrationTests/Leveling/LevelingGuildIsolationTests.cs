@@ -42,7 +42,7 @@ public sealed class LevelingGuildIsolationTests(GrimoireCoreFactory database) : 
     {
         (await this._bot.RunSlashCommandAndWaitAsync(this.B.General, "rewards", this.B.Admin,
                 SlashOption.Subcommand("add", SlashOption.Role("role", this.B.KickerRoleId), SlashOption.Integer("level", 2))))
-            .Description.ShouldBe($"Successfully updated the rewards to include <@&{this.B.KickerRoleId}> at level 2.");
+            .Description.ShouldBe($"<@&{this.B.KickerRoleId}> is now a reward at level 2.");
 
         (await this._bot.RunSlashCommandAndWaitAsync(this.A.General, "rewards", this.A.Admin, SlashOption.Subcommand("view")))
             .Description.ShouldBe("This server does not have any rewards.");

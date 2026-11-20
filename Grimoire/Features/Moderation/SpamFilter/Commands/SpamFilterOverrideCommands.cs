@@ -7,7 +7,8 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Documents;
+using LanguageExt;
 using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 
@@ -44,11 +45,11 @@ internal class SpamFilterOverrideCommands(
 
         var (option, message) = overrideSetting switch
         {
-            SpamFilterOverrideSetting.Always => (SpamFilterOverrideOption.AlwaysFilter,
+            SpamFilterOverrideSetting.Always => (Some(SpamFilterOverrideOption.AlwaysFilter),
                 $"Will now always filter spam messages from {channel.Mention} and its sub channels/threads."),
-            SpamFilterOverrideSetting.Never => (SpamFilterOverrideOption.NeverFilter,
+            SpamFilterOverrideSetting.Never => (Some(SpamFilterOverrideOption.NeverFilter),
                 $"Will now never filter spam messages from {channel.Mention} and its sub channels/threads."),
-            SpamFilterOverrideSetting.Inherit => (SpamFilterOverrideOption.Inherit,
+            SpamFilterOverrideSetting.Inherit => (Option<SpamFilterOverrideOption>.None,
                 $"{channel.Mention} and its sub channels/threads will now follow the parent channel's spam filter setting."),
             _ => throw new InvariantViolationException("Invalid spam filter override option.")
         };
@@ -75,15 +76,20 @@ internal class SpamFilterOverrideCommands(
 
         var guild = ctx.RequiredGuild;
 
+        // A failure gets the error reply, not "None", which would look like no overrides (spec 2.5, OQ-4).
+        if (await settingsModule.GetAllSpamFilterOverrideAsync(guild.GetGuildId())
+            is not Fin<Map<ChannelId, SpamFilterOverrideOption>>.Succ { Value: var overrides })
+        {
+            await ctx.SendErrorResponseAsync("Could not load the spam filter overrides. Please try again later.");
+            return;
+        }
+
         List<string> lines = [];
-        await foreach (var spamFilterOverride in settingsModule.GetAllSpamFilterOverrideAsync(guild.GetGuildId()))
-            if (await guild.GetChannelOrDefaultAsync(spamFilterOverride.ChannelId) is { } channel)
-                lines.Add(channel.Mention + spamFilterOverride.ChannelOption switch
-                {
-                    SpamFilterOverrideOption.AlwaysFilter => " - Always Filter",
-                    SpamFilterOverrideOption.NeverFilter => " - Never Filter",
-                    _ => " - Inherit/Default"
-                });
+        foreach (var (channelId, option) in overrides)
+            if (await guild.GetChannelOrDefaultAsync(channelId) is { } channel)
+                lines.Add(channel.Mention + (option is SpamFilterOverrideOption.AlwaysFilter
+                    ? " - Always Filter"
+                    : " - Never Filter"));
 
         await ctx.ReplyPagedAsync(
             new DiscordEmbedBuilder().WithColor(GrimoireColor.Purple).WithAuthor("Spam Filter Override Settings"),

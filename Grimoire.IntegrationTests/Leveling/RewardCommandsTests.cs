@@ -9,6 +9,8 @@ using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Leveling;
 
@@ -41,7 +43,7 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
     [Fact]
     public async Task Add_StoresTheReward_AndLogsIt()
     {
-        var expected = $"Successfully updated the rewards to include <@&{this.Guild.KickerRoleId}> at level 3.";
+        var expected = $"<@&{this.Guild.KickerRoleId}> is now a reward at level 3.";
 
         (await this.AddAsync(this.Guild.KickerRoleId, 3, "well done")).Description.ShouldBe(expected);
 
@@ -49,21 +51,54 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
         (reward.RoleId, reward.RewardLevel, reward.RewardMessage?.Value).ShouldBe((new RoleId(this.Guild.KickerRoleId), 3, "well done"));
         // Review X-6: reward changes go to the mod log, not the leveling log, and say who made them.
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
-            == $"{this.Guild.Admin.MemberMention} updated the rewards to include <@&{this.Guild.KickerRoleId}> at level 3.");
+            == $"{this.Guild.Admin.MemberMention} added <@&{this.Guild.KickerRoleId}> as a reward at level 3.");
         this._bot.Rest.Requests.ShouldNotContain(request => this._bot.IsLevelLogPost(request));
         this._bot.Logs.Errors.ShouldBeEmpty();
     }
 
+    /// <summary>Spec 2.5, UX change 1: moving a reward says from where, and that members who have it keep it.</summary>
     /// <remarks>Cases: LVL-101.</remarks>
     [Fact]
-    public async Task Add_ForARoleThatIsAlreadyAReward_UpdatesIt()
+    public async Task Add_ForARoleThatIsAlreadyAReward_MovesIt_AndSaysSo()
     {
         await this.AddAsync(this.Guild.KickerRoleId, 3, "old");
 
-        await this.AddAsync(this.Guild.KickerRoleId, 7, null);
+        (await this.AddAsync(this.Guild.KickerRoleId, 7, null)).Description.ShouldBe(
+            $"<@&{this.Guild.KickerRoleId}> moved from level 3 to level 7. Members who already have it keep it.");
 
         var reward = (await this.RewardsAsync()).ShouldHaveSingleItem();
         (reward.RewardLevel, reward.RewardMessage).ShouldBe((7, null));
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()
+            == $"{this.Guild.Admin.MemberMention} moved the <@&{this.Guild.KickerRoleId}> reward from level 3 to level 7.");
+    }
+
+    /// <summary>Spec 2.5, UX change 1: the same level with a new message is a message change.</summary>
+    /// <remarks>Cases: LVL-101.</remarks>
+    [Fact]
+    public async Task Add_WithANewMessage_AtTheSameLevel_SaysTheMessageChanged()
+    {
+        await this.AddAsync(this.Guild.KickerRoleId, 3, "old");
+
+        (await this.AddAsync(this.Guild.KickerRoleId, 3, "new")).Description.ShouldBe(
+            $"Updated the message for the <@&{this.Guild.KickerRoleId}> reward (level 3).");
+
+        (await this.RewardsAsync()).ShouldHaveSingleItem().RewardMessage?.Value.ShouldBe("new");
+    }
+
+    /// <summary>Spec 2.5, UX change 1: adding the reward already set says so in yellow and logs nothing.</summary>
+    /// <remarks>Cases: LVL-101.</remarks>
+    [Fact]
+    public async Task Add_OfTheRewardAlreadySet_SaysSo_AndLogsNothing()
+    {
+        await this.AddAsync(this.Guild.KickerRoleId, 3, "same");
+        await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>()?.Contains("added", StringComparison.Ordinal) == true);
+        var modLogPosts = this._bot.Rest.Requests.Count(this._bot.IsModLogPost);
+
+        (await this.AddAsync(this.Guild.KickerRoleId, 3, "same")).Description.ShouldBe(
+            $"<@&{this.Guild.KickerRoleId}> is already a reward at level 3.");
+
+        await Task.Delay(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        this._bot.Rest.Requests.Count(this._bot.IsModLogPost).ShouldBe(modLogPosts);
     }
 
     /// <remarks>Cases: LVL-103.</remarks>
@@ -243,13 +278,12 @@ public sealed class RewardCommandsTests(GrimoireCoreFactory database) : IAsyncLi
 
         reply.Description.ShouldNotBeNull().ShouldContain($"Did not find a saved reward for <@&{this.Guild.KickerRoleId}>.");
         await using var settingsContext = database.CreateSettingsDbContext();
-        (await settingsContext.Rewards.AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
+        (await SettingsRows.LatestDocument(settingsContext, this.GuildId, SettingsDocument.Rewards,
+            TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
     private async Task AddRewardDirectlyAsync(ulong roleId, int level, string? message)
-        => (await this.Settings.SetRewardAsync(Grimoire.Settings.Domain.RewardAdded.Create(new RoleId(roleId), this.GuildId, level,
-            message is null ? null : Grimoire.Settings.Domain.Values.RewardMessage.Create(message).ShouldSucceed(),
-            new ModeratorId(this.Guild.Owner.Id), DateTimeOffset.UtcNow).ShouldSucceed())).ShouldSucceed();
+        => (await this.Settings.SetRewardAsync(this.GuildId, new ModeratorId(this.Guild.Owner.Id), new RewardEntry(new RoleId(roleId), level, message is null ? null : Grimoire.Settings.Domain.Values.RewardMessage.Create(message).ShouldSucceed()))).ShouldSucceed();
 
     private Task<FakeReply> RewardsCommandAsync(string subcommand, params SlashOption[] options)
         => this._bot.RunSlashCommandAndWaitAsync("rewards", this.Guild.Admin, SlashOption.Subcommand(subcommand, options));

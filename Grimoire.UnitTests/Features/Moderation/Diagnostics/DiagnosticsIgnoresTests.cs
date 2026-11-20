@@ -6,7 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using Grimoire.Features.Moderation.Diagnostics;
-using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.UnitTests.Features.Moderation.Diagnostics;
 
@@ -15,13 +15,11 @@ public sealed class DiagnosticsIgnoresTests
     [Fact]
     public void Settings_items_are_split_into_role_and_member_ids()
     {
-        var guild = new GuildId(1);
-        var mod = new ModeratorId(9);
-        DiagnosticsIgnoredItem[] items =
+        DiagnosticsTarget[] items =
         [
-            DiagnosticsIgnoredRole.Create(new RoleId(10), guild, mod, DateTimeOffset.UtcNow),
-            DiagnosticsIgnoredRole.Create(new RoleId(11), guild, mod, DateTimeOffset.UtcNow),
-            DiagnosticsIgnoredMember.Create(new UserId(20), guild, mod, DateTimeOffset.UtcNow)
+            new DiagnosticsTarget.Role(new RoleId(10)),
+            new DiagnosticsTarget.Role(new RoleId(11)),
+            new DiagnosticsTarget.Member(new UserId(20))
         ];
 
         var ignores = DiagnosticsIgnores.From(items);

@@ -178,7 +178,8 @@ converters by convention (`StronglyTypedIdConventions`). The legacy tables from 
   (Q12b), breaks ties by `UserId` (defect 23, enforced by a unique `(GuildId, Rank)` index), and carries each member's
   latest server display name and username (TD-9) for 3.15 to render.
 
-**The Settings schema** (spec 2.2). Its ids are `bigint` (P-9).
+**The Settings schema** (specs 2.2 and 2.5). Its ids are `bigint` (P-9). It has four tables: `GuildSettings`,
+`Mutes`, `ChannelLocks` and `ThreadLocks`.
 
 - **Guild settings are versioned JSON documents** (TD-6, C13): `"Settings"."GuildSettings"` holds one row per
   `(GuildId, Document, Version)`, with a `jsonb` value and who/when. There are six documents: `Modules`, which holds
@@ -190,6 +191,15 @@ converters by convention (`StronglyTypedIdConventions`). The legacy tables from 
   re-applies, up to three times. A change that leaves the document equal stores nothing (`Write.Unchanged`). Each
   document is cached under its own key, so the module gate reads only `Modules`, and a disabled module's document is
   never loaded.
+- **Settings collections are documents too** (C14, spec 2.5): `Rewards`, `XpExclusions`, `MessageLogOverrides`,
+  `SpamFilterOverrides` and `DiagnosticsIgnores` are five more kinds in `GuildSettings`, written the same way. Each
+  collection is keyed in the JSON, a LanguageExt `Map` or `Set` keyed by snowflake, so a key can appear only once and
+  "off" is a missing entry, not a row of its own. `Map` and `Set` compare by value and keep their keys sorted, so the
+  same content always writes the same JSON. The snowflake ids implement `IComparable<T>` for this. A collection write
+  uses `UpdateDocument<T, TResult>`, whose pure change also returns what it changed against the version it replaces
+  (the targets newly excluded, or a reward's `RewardChange`), so the reply is right even after a lost race. The pure
+  decisions live on the documents: `XpExclusions.ExcludesMessage`, `MessageLogOverrides.ShouldLog` (the walk up
+  through a channel's parents).
 - **Mutes, channel locks and thread locks are one row each** (TD-1, TD-2), whose `State` only moves forward:
   `Pending` → `Active`, and `Pending` or `Active` → `Expired` or `Removed`. A check constraint requires exactly the
   fields each state needs. A partial unique index allows one row in force per member or channel. The state is the

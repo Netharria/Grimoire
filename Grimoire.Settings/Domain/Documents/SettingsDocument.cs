@@ -20,7 +20,13 @@ public enum SettingsDocument
     Leveling,
     MessageLog,
     Moderation,
-    UserLog
+    UserLog,
+    // Spec 2.5 (C14): the settings collections, one document per guild each.
+    Rewards,
+    XpExclusions,
+    MessageLogOverrides,
+    SpamFilterOverrides,
+    DiagnosticsIgnores
 }
 
 /// <summary>

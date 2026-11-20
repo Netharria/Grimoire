@@ -185,12 +185,14 @@ public sealed partial class GainUserXp(
     private async Task RemoveRewardsForDeletedRolesAsync(DiscordGuild guild, RewardEntry[] orphaned,
         CancellationToken cancellationToken)
     {
-        List<RewardEntry> removed = [];
-        foreach (var reward in orphaned)
-            if (await settingsModule.SetRewardAsync(RewardRemoved.Create(reward.RoleId, guild.GetGuildId(),
-                    new ModeratorId(guild.CurrentMember.Id), DateTimeOffset.UtcNow), cancellationToken)
-                is Fin<RewardRemoved>.Succ)
-                removed.Add(reward);
+        // One write for all of them (spec 2.5). Only the roles this write removed are reported, so a member levelling
+        // up at the same moment can't report a role twice.
+        var removedRoles = await settingsModule.RemoveRewardsAsync(guild.GetGuildId(),
+                new ModeratorId(guild.CurrentMember.Id), orphaned.Select(reward => reward.RoleId), cancellationToken)
+            is Fin<Write<Set<RoleId>>>.Succ { Value: Write<Set<RoleId>>.Saved { Value: var roles } }
+            ? roles
+            : default;
+        var removed = orphaned.Where(reward => removedRoles.Contains(reward.RoleId)).ToList();
 
         if (removed.Count > 0)
             await issueReporter.ReportAsync(

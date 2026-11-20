@@ -50,6 +50,12 @@ public sealed partial class SettingsModule(
             $"Failed when retrieving the {T.Kind} settings for guild {guildId}",
             cancellationToken);
 
+    /// <summary>A guild's document, cached, with <paramref name="read" /> applied to it (spec 2.5).</summary>
+    private async Task<Fin<TOut>> ReadDocument<T, TOut>(GuildId guildId, Func<T, TOut> read,
+        CancellationToken cancellationToken)
+        where T : class, ISettingsDocument<T>
+        => (await GetDocument<T>(guildId, cancellationToken)).Map(read);
+
     /// <summary>
     ///     Applies <paramref name="change" /> to the latest version of a document and stores the result as the next
     ///     version (TD-6). A change that leaves the document as it was stores nothing. A write that loses a race with
@@ -61,7 +67,25 @@ public sealed partial class SettingsModule(
         Func<T, Fin<T>> change,
         CancellationToken cancellationToken)
         where T : class, ISettingsDocument<T>
-        => ExecuteSafelyAsync<Write<T>>(async ct =>
+        => this.UpdateDocument<T, T>(guildId, setBy,
+            current => change(current).Map(updated => (updated, updated)),
+            "The setting was already set to that value.", cancellationToken);
+
+    /// <summary>
+    ///     <see cref="UpdateDocument{T}" />, where the change also says what it changed (spec 2.5). That result is
+    ///     worked out against the version the write replaces, so it is right even after a lost race.
+    ///     <paramref name="failureMessage" /> is the <see cref="Unavailable" /> message when the database fails, which
+    ///     some commands show.
+    /// </summary>
+    private Task<Fin<Write<TResult>>> UpdateDocument<T, TResult>(
+        GuildId guildId,
+        ModeratorId setBy,
+        Func<T, Fin<(T Document, TResult Result)>> change,
+        string unchangedMessage,
+        CancellationToken cancellationToken,
+        string failureMessage = "Was not able to save the setting to the database.")
+        where T : class, ISettingsDocument<T>
+        => ExecuteSafelyAsync<Write<TResult>>(async ct =>
         {
             await using var dbContext = await this._dbContextFactory.CreateDbContextAsync(ct);
             for (var attempt = 0; attempt < DocumentWriteAttempts; attempt++)
@@ -69,27 +93,26 @@ public sealed partial class SettingsModule(
                 var latest = await LatestDocument(dbContext, guildId, T.Kind, ct);
                 var current = ParseOrEmpty<T>(latest);
                 var changed = change(current);
-                if (changed is Fin<T>.Fail(var error))
+                if (changed is Fin<(T, TResult)>.Fail(var error))
                     return error;
-                var updated = (T)changed;
-
+                var (updated, result) = ((T, TResult))changed;
                 // Value equality: on a generic T, == would compare references and see every write as a change.
                 if (EqualityComparer<T>.Default.Equals(updated, current))
                 {
                     await this._cache.RemoveAsync(CacheKey.Document(T.Kind, guildId), ct);
-                    return new Write<T>.Unchanged("The setting was already set to that value.");
+                    return new Write<TResult>.Unchanged(unchangedMessage);
                 }
 
                 if (await InsertNextVersion(dbContext, guildId, T.Kind, latest?.Version ?? 0,
                         SettingsJson.Serialize(updated), setBy, ct))
                 {
                     await this._cache.RemoveAsync(CacheKey.Document(T.Kind, guildId), ct);
-                    return new Write<T>.Saved(updated);
+                    return new Write<TResult>.Saved(result);
                 }
             }
 
             return new Unavailable($"The {T.Kind} settings kept changing while they were being saved.");
-        }, "Was not able to save the setting to the database.", cancellationToken);
+        }, failureMessage, cancellationToken);
 
     private static T ParseOrEmpty<T>(GuildSettingRow? row) where T : class, ISettingsDocument<T>
         => row is null ? T.Empty : SettingsJson.Parse<T>(row.Value);

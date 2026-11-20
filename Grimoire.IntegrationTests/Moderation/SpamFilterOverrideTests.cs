@@ -9,6 +9,8 @@ using Grimoire.Features.Moderation.SpamFilter.Commands;
 using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using Grimoire.IntegrationTests.FakeDiscord;
+using Grimoire.IntegrationTests.Database.SettingsLayer;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Moderation;
 
@@ -236,9 +238,19 @@ public sealed class SpamFilterOverrideTests(GrimoireCoreFactory database) : IAsy
     private Task<FakeReply> ViewAsync()
         => this._bot.RunSlashCommandAndWaitAsync("spam_filter", this.Guild.Admin, SlashOption.Subcommand("view"));
 
-    private async Task<List<SpamFilterOverride>> RowsAsync()
+    private sealed record OverrideRow(ChannelId ChannelId, SpamFilterOverrideOption ChannelOption, ModeratorId SetBy);
+
+    /// <summary>
+    ///     The overrides in the guild's stored document, read past the cache, each with who wrote that version
+    ///     (spec 2.5).
+    /// </summary>
+    private async Task<List<OverrideRow>> RowsAsync()
     {
         await using var settingsContext = database.CreateSettingsDbContext();
-        return await settingsContext.SpamFilterOverrides.AsNoTracking().ToListAsync(TestContext.Current.CancellationToken);
+        if (await SettingsRows.LatestDocument(settingsContext, new GuildId(this.Guild.Id), SettingsDocument.SpamFilterOverrides,
+                TestContext.Current.CancellationToken) is not { } latest)
+            return [];
+        return SettingsJson.Parse<SpamFilterOverrides>(latest.Value).Channels.Pairs
+            .Select(pair => new OverrideRow(pair.Key, pair.Value, latest.SetBy)).ToList();
     }
 }

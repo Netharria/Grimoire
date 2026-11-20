@@ -11,6 +11,7 @@ using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Moderation;
 
@@ -81,8 +82,8 @@ public sealed class DiagnosticsTests(GrimoireCoreFactory database) : IAsyncLifet
         var expected = $"<@&{this.Guild.ModeratorRoleId}> <@{this.Guild.User1.Id}> are now ignored by the diagnostics.";
         reply.Description.ShouldBe(expected);
         var stored = await this.StoredIgnoresAsync();
-        stored.OfType<DiagnosticsIgnoredRole>().Select(role => role.RoleId).ShouldBe([new RoleId(this.Guild.ModeratorRoleId)]);
-        stored.OfType<DiagnosticsIgnoredMember>().Select(member => member.UserId).ShouldBe([new UserId(this.Guild.User1.Id)]);
+        stored.OfType<DiagnosticsTarget.Role>().Select(role => role.Id).ShouldBe([new RoleId(this.Guild.ModeratorRoleId)]);
+        stored.OfType<DiagnosticsTarget.Member>().Select(member => member.Id).ShouldBe([new UserId(this.Guild.User1.Id)]);
         await this._bot.WaitForModLogEmbedAsync(e => e["description"]?.GetValue<string>() == $"{this.Guild.Admin.MemberMention}: {expected}");
     }
 
@@ -150,6 +151,6 @@ public sealed class DiagnosticsTests(GrimoireCoreFactory database) : IAsyncLifet
         => this._bot.RunSlashCommandAndWaitAsync("diagnostics", this.Guild.Admin,
             SlashOption.Group("ignore", SlashOption.Subcommand(subcommand, items)));
 
-    private async Task<FrozenSet<DiagnosticsIgnoredItem>> StoredIgnoresAsync()
+    private async Task<IReadOnlySet<DiagnosticsTarget>> StoredIgnoresAsync()
         => (await this.Settings.GetDiagnosticsIgnoredItemsAsync(this.GuildId)).ShouldSucceed();
 }

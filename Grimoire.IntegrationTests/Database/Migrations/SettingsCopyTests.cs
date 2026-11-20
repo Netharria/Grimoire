@@ -191,6 +191,99 @@ public sealed class SettingsCopyTests(GrimoireCoreFactory database) : IAsyncLife
     }
 
     /// <summary>
+    ///     Spec 2.5, section 6.3: main's collection tables become one version-1 document per guild and collection,
+    ///     keeping only what is in force. A reward at level 0 becomes level 1 (OQ-3), an override that meant "inherit"
+    ///     is left out, and a guild with nothing in a collection gets no document.
+    /// </summary>
+    [Fact]
+    public async Task EveryLegacyCollection_BecomesADocument_ReadTheSameWay()
+    {
+        await this.SeedSettingsAsync();
+        await this.SeedAsync($"""
+            INSERT INTO public."Rewards" ("RoleId", "GuildId", "RewardLevel", "RewardMessage") VALUES
+                (40, {Configured}, 5, 'Well done'), (41, {Configured}, 0, NULL), ({LargeChannel}, 3, 10, NULL);
+            INSERT INTO public."IgnoredChannels" ("ChannelId", "GuildId") VALUES (50, {Configured}), (9, {Configured});
+            INSERT INTO public."IgnoredMembers" ("UserId", "GuildId") VALUES (51, {Configured});
+            INSERT INTO public."IgnoredRoles" ("RoleId", "GuildId") VALUES (52, {Configured});
+            INSERT INTO public."MessagesLogChannelOverrides" ("ChannelId", "GuildId", "ChannelOption") VALUES
+                (60, {Configured}, 0), (61, {Configured}, 1), (62, {Configured}, 2);
+            INSERT INTO public."SpamFilterOverrides" ("ChannelId", "GuildId", "ChannelOption") VALUES
+                (70, {Configured}, 0), (71, {Configured}, 1), (72, {Configured}, 2), (73, 3, 2);
+            """);
+        await this.FinishTheChainAsync();
+        var settings = SettingsModuleFactory.Create(this.ConnectionString);
+        var guild = new GuildId(Configured);
+
+        (await settings.GetLevelingRewardsAsync(guild, Token)).ShouldSucceed().ShouldBe([
+            new RewardEntry(new RoleId(40), 5, RewardMessage.FromDatabase("Well done")),
+            new RewardEntry(new RoleId(41), 1, null)
+        ], ignoreOrder: true);
+        (await settings.GetLevelingRewardsAsync(new GuildId(3), Token)).ShouldSucceed()
+            .ShouldBe([new RewardEntry(new RoleId(LargeChannel), 10, null)]);
+
+        (await settings.GetAllIgnoredItems(guild, Token)).ShouldSucceed().ShouldBe([
+            new XpTarget.Channel(new ChannelId(9)), new XpTarget.Channel(new ChannelId(50)),
+            new XpTarget.Member(new UserId(51)), new XpTarget.Role(new RoleId(52))
+        ], ignoreOrder: true);
+
+        (await settings.GetAllOverriddenChannels(guild, Token)).ShouldSucceed().ShouldBe(
+            LanguageExt.Prelude.toMap([
+                (new ChannelId(60), MessageLogOverrideOption.AlwaysLog),
+                (new ChannelId(61), MessageLogOverrideOption.NeverLog)
+            ]));
+        (await settings.GetAllSpamFilterOverrideAsync(guild, Token)).ShouldSucceed().ShouldBe(
+            LanguageExt.Prelude.toMap([
+                (new ChannelId(70), SpamFilterOverrideOption.AlwaysFilter),
+                (new ChannelId(71), SpamFilterOverrideOption.NeverFilter)
+            ]));
+
+        await using var dbContext = this.SettingsContext();
+        // Guild 3's only override meant "inherit", and guild 2 has nothing: no documents for them.
+        (await SettingsRows.LatestDocument(dbContext, new GuildId(3), SettingsDocument.SpamFilterOverrides, Token))
+            .ShouldBeNull();
+        (await dbContext.GuildSettings.AnyAsync(row => row.GuildId == new GuildId(Untouched), Token)).ShouldBeFalse();
+    }
+
+    /// <summary>
+    ///     A copied document is exactly what C# writes for the same content (spec 2.5, section 3.7), so an unchanged
+    ///     write after the deploy is seen as unchanged, and the equivalence check's EXCEPT is exact.
+    /// </summary>
+    [Fact]
+    public async Task ACopiedCollection_IsWhatTheBotWouldWrite()
+    {
+        await this.SeedSettingsAsync();
+        await this.SeedAsync($"""
+            INSERT INTO public."Rewards" ("RoleId", "GuildId", "RewardLevel", "RewardMessage") VALUES
+                (40, {Configured}, 5, 'Well done'), (41, {Configured}, 3, NULL);
+            INSERT INTO public."IgnoredChannels" ("ChannelId", "GuildId") VALUES (50, {Configured}), (9, {Configured});
+            INSERT INTO public."IgnoredRoles" ("RoleId", "GuildId") VALUES (52, {Configured});
+            """);
+        await this.FinishTheChainAsync();
+        await using var dbContext = this.SettingsContext();
+
+        var rewards = await SettingsRows.LatestDocument(dbContext, new GuildId(Configured), SettingsDocument.Rewards,
+            Token);
+        rewards.ShouldNotBeNull().Version.ShouldBe(1);
+        rewards.SetBy.ShouldBe(new ModeratorId(0));
+        SettingsJson.Parse<LevelRewards>(rewards.Value).ShouldBe(LevelRewards.Empty
+            .Set(new RewardEntry(new RoleId(41), 3, null)).Document
+            .Set(new RewardEntry(new RoleId(40), 5, RewardMessage.FromDatabase("Well done"))).Document);
+        var exclusions = await SettingsRows.LatestDocument(dbContext, new GuildId(Configured),
+            SettingsDocument.XpExclusions, Token);
+        var written = XpExclusions.Empty.Add([
+            new XpTarget.Role(new RoleId(52)), new XpTarget.Channel(new ChannelId(50)),
+            new XpTarget.Channel(new ChannelId(9))
+        ]).Document;
+        SettingsJson.Parse<XpExclusions>(exclusions.ShouldNotBeNull().Value).ShouldBe(written);
+
+        // The same text as C# writes, once both go through jsonb's normal form.
+        var normalised = await dbContext.Database
+            .SqlQuery<string>($"SELECT CAST(CAST({SettingsJson.Serialize(written)} AS jsonb) AS text) AS \"Value\"")
+            .SingleAsync(Token);
+        exclusions.Value.ShouldBe(normalised);
+    }
+
+    /// <summary>
     ///     Guild 1 changed everything, guild 2 nothing, guild 3 only its moderation log, to a channel id above 2^53.
     ///     Each settings table gets a row per guild, as main created them.
     /// </summary>

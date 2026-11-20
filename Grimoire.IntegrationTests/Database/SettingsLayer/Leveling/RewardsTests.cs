@@ -5,7 +5,10 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
+using Grimoire.Settings.Domain.Documents;
 using Grimoire.Settings.Domain.Values;
+using LanguageExt;
+using static LanguageExt.Prelude;
 
 namespace Grimoire.IntegrationTests.Database.SettingsLayer.Leveling;
 
@@ -22,13 +25,12 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
 
     public async ValueTask DisposeAsync() => await factory.ResetDatabase();
 
-    private Task AddReward(RoleId roleId, int level, string? message = null)
-        => this._sut.SetRewardAsync(
-            RewardAdded.Create(roleId, _guildId, level, null, _modId, DateTimeOffset.UtcNow).ShouldSucceed());
+    private Task<Fin<Write<RewardChange>>> AddReward(RoleId roleId, int level, GuildId? guildId = null)
+        => this._sut.SetRewardAsync(guildId ?? _guildId, _modId, new RewardEntry(roleId, level, null),
+            TestContext.Current.CancellationToken);
 
-    private Task RemoveReward(RoleId roleId)
-        => this._sut.SetRewardAsync(
-            RewardRemoved.Create(roleId, _guildId, _modId, DateTimeOffset.UtcNow));
+    private Task<Fin<Write<Set<RoleId>>>> RemoveReward(RoleId roleId)
+        => this._sut.RemoveRewardsAsync(_guildId, _modId, [roleId], TestContext.Current.CancellationToken);
 
     [Fact]
     public async Task NoRewards_ReturnsEmptySet()
@@ -42,9 +44,8 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     [Fact]
     public async Task SingleReward_ReturnedCorrectly()
     {
-        await this._sut.SetRewardAsync(
-            RewardAdded.Create(_roleId, _guildId, 5, RewardMessage.FromDatabase("GG"), _modId, DateTimeOffset.UtcNow).ShouldSucceed(),
-            TestContext.Current.CancellationToken);
+        (await this._sut.SetRewardAsync(_guildId, _modId, new RewardEntry(_roleId, 5, RewardMessage.FromDatabase("GG")),
+            TestContext.Current.CancellationToken)).ShouldBeSaved().ShouldBeOfType<RewardChange.Added>();
 
         var result = await this._sut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)
             .ShouldSucceed();
@@ -76,10 +77,10 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task MultipleHistoricalRows_LatestWins()
+    public async Task AChangedLevel_IsMoved_AndReadBack()
     {
         await AddReward(_roleId, 5);
-        await AddReward(_roleId, 10);
+        (await AddReward(_roleId, 10)).ShouldBeSaved().ShouldBe(new RewardChange.Moved(5));
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
         var result = await freshSut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)
@@ -90,10 +91,10 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task LatestRowRemoved_NotReturned()
+    public async Task ARemovedReward_IsNotReturned()
     {
         await AddReward(_roleId, 5);
-        await RemoveReward(_roleId);
+        (await RemoveReward(_roleId)).ShouldBeSaved().ShouldBe(toSet([_roleId]));
 
         var freshSut = SettingsModuleFactory.Create(factory.ConnectionString);
         var result = await freshSut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)
@@ -137,8 +138,7 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
         await this._sut.SetModuleState(Module.Leveling, guildB, _modId, true, TestContext.Current.CancellationToken);
 
         await AddReward(_roleId, 5);
-        await this._sut.SetRewardAsync(RewardAdded.Create(roleB, guildB, 10, null, _modId, DateTimeOffset.UtcNow).ShouldSucceed(),
-            TestContext.Current.CancellationToken);
+        await AddReward(roleB, 10, guildB);
 
         var resultA = await this._sut.GetLevelingRewardsAsync(_guildId, TestContext.Current.CancellationToken)
             .ShouldSucceed();
@@ -149,5 +149,42 @@ public sealed class RewardsTests(SettingsTestsFactory factory) : IAsyncLifetime
         resultA.Single().RoleId.ShouldBe(_roleId);
         resultB.ShouldHaveSingleItem();
         resultB.Single().RoleId.ShouldBe(roleB);
+    }
+
+    [Fact]
+    public async Task TheRewardAlreadySet_IsUnchanged_AndStoresNothing()
+    {
+        await AddReward(_roleId, 5);
+
+        (await AddReward(_roleId, 5)).ShouldBeUnchanged();
+
+        await using var db = factory.CreateDbContext();
+        (await SettingsRows.LatestDocument(db, _guildId, SettingsDocument.Rewards,
+            TestContext.Current.CancellationToken))!.Version.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task RemovingARoleWithNoReward_IsUnchanged()
+    {
+        await AddReward(_roleId, 5);
+
+        (await RemoveReward(new RoleId(301UL))).ShouldBeUnchanged();
+    }
+
+    /// <summary>
+    ///     Spec 2.5: two removals of the same reward at once. One returns the role and the other is unchanged, decided
+    ///     against the version each replaced, so a deleted role is never reported twice.
+    /// </summary>
+    [Fact]
+    public async Task ConcurrentRemovals_OfTheSameReward_RemoveItOnce()
+    {
+        await AddReward(_roleId, 5);
+
+        var results = await Task.WhenAll(Enumerable.Range(0, 2).Select(_ =>
+            SettingsModuleFactory.Create(factory.ConnectionString).RemoveRewardsAsync(_guildId, _modId, [_roleId],
+                TestContext.Current.CancellationToken)));
+
+        results.Count(result => result.ShouldSucceed() is Write<Set<RoleId>>.Saved).ShouldBe(1);
+        results.Count(result => result.ShouldSucceed() is Write<Set<RoleId>>.Unchanged).ShouldBe(1);
     }
 }

@@ -264,8 +264,7 @@ public sealed class RewardGrantTests(GrimoireCoreFactory database) : IAsyncLifet
         => (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, amount)).ShouldBeSaved();
 
     private async Task AddRewardAsync(ulong roleId, int level, string? message)
-        => (await this.Settings.SetRewardAsync(RewardAdded.Create(new RoleId(roleId), this.GuildId, level,
-            message is null ? null : RewardMessage.Create(message).ShouldSucceed(), this.Owner, DateTimeOffset.UtcNow).ShouldSucceed())).ShouldSucceed();
+        => (await this.Settings.SetRewardAsync(this.GuildId, this.Owner, new RewardEntry(new RoleId(roleId), level, message is null ? null : RewardMessage.Create(message).ShouldSucceed()))).ShouldSucceed();
 
     /// <summary>Moves the member's timeouts back, as if <paramref name="by" /> had passed. The timeout is part of the key.</summary>
     private async Task BackdateTimeoutsAsync(FakeUser user, TimeSpan by)

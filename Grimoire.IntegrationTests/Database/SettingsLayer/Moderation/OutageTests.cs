@@ -6,6 +6,7 @@
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Frozen;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Database.SettingsLayer.Moderation;
 
@@ -57,11 +58,8 @@ public sealed class OutageTests(SettingsTestsFactory factory) : IAsyncLifetime
             .ShouldFail().ShouldBeOfType<Unavailable>();
 
     [Fact]
-    public async Task AppendIgnoredItemsEvent_Fails()
-        => (await this._down.AppendIgnoredItemsEvent(_guildId,
-                new System.Collections.Generic.HashSet<XpTrackedItem>
-                {
-                    new IgnoredMember { UserId = _userId, GuildId = _guildId, SetBy = _modId, SetAt = DateTimeOffset.UtcNow }
-                }, Token))
+    public async Task IgnoreXp_Fails()
+        => (await this._down.IgnoreXpAsync(_guildId, _modId,
+                new XpTarget[] { new XpTarget.Member(_userId) }.ToFrozenSet(), Token))
             .ShouldFail().ShouldBeOfType<Unavailable>();
 }

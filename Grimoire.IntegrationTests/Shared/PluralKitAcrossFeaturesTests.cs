@@ -13,6 +13,7 @@ using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Grimoire.Settings.Domain.Documents;
 
 namespace Grimoire.IntegrationTests.Shared;
 
@@ -178,8 +179,7 @@ public sealed class PluralKitAcrossFeaturesTests(GrimoireCoreFactory database) :
         (await this.Settings.SetLogChannelSetting(GuildLogType.Leveling, this.GuildId, this.Owner,
             new ChannelId(this.Guild.LevelLog.Id), Token)).ShouldBeSetOrUnchanged();
         (await this.Settings.SetLevelingSettings(this.GuildId, this.Owner, LevelSettings.Amount, 15, Token)).ShouldBeSaved();
-        (await this.Settings.SetRewardAsync(RewardAdded.Create(new RoleId(this.Guild.KickerRoleId), this.GuildId, 2, null,
-            this.Owner, DateTimeOffset.UtcNow).ShouldSucceed(), Token)).ShouldSucceed();
+        (await this.Settings.SetRewardAsync(this.GuildId, this.Owner, new RewardEntry(new RoleId(this.Guild.KickerRoleId), 2, null), Token)).ShouldSucceed();
 
         await this.ProxyAsync("level me");
 

@@ -26,7 +26,7 @@ public sealed class DomainInvariantTests
     private static readonly UserId _userId = new(100UL);
     private static readonly SinId _sinId = new(1L);
 
-    // ── RewardAdded ───────────────────────────────────────────────────────────
+    // ── RewardEntry ───────────────────────────────────────────────────────────
 
     private static readonly RoleId _roleId = new(300UL);
 
@@ -148,23 +148,23 @@ public sealed class DomainInvariantTests
     }
 
     [Fact]
-    public void RewardAdded_NegativeLevel_IsInvalidWithMessage()
+    public void ARewardBelowLevelOne_IsInvalidWithMessage()
     {
-        var result = RewardAdded.Create(_roleId, _guildId, -1, null, _modId, _now);
-        result.ShouldFail().ShouldBeOfType<Invalid>().Message.ShouldBe("Reward Level must be greater than or equal to zero.");
+        RewardEntry.Create(_roleId, 0, null).ShouldFail().ShouldBeOfType<Invalid>().Message
+            .ShouldBe("Reward Level must be at least 1.");
+        RewardEntry.Create(_roleId, -1, null).ShouldFail().ShouldBeOfType<Invalid>();
     }
 
+    /// <summary>Q41b (spec 2.5, OQ-3): the lowest reward level is 1, since every member is at least level 1.</summary>
     [Fact]
-    public void RewardAdded_ZeroLevel_IsValid()
-        => RewardAdded.Create(_roleId, _guildId, 0, null, _modId, _now)
-            .ShouldBeOfType<Validation<Error, RewardAdded>.Success>();
+    public void ARewardAtLevelOne_IsValid()
+        => RewardEntry.Create(_roleId, 1, null).ShouldSucceed().ShouldBe(new RewardEntry(_roleId, 1, null));
 
     [Fact]
-    public void RewardAdded_WithMessage_IsValid()
+    public void ARewardWithAMessage_IsValid()
     {
         var msg = RewardMessage.Create("Congratulations!").ShouldSucceed();
-        RewardAdded.Create(_roleId, _guildId, 10, msg, _modId, _now)
-            .ShouldBeOfType<Validation<Error, RewardAdded>.Success>();
+        RewardEntry.Create(_roleId, 10, msg).ShouldSucceed().RewardMessage.ShouldBe(msg);
     }
 
     // ── What the factories hold ───────────────────────────────────────────────

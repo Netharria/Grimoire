@@ -66,22 +66,6 @@ namespace Grimoire.Settings.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MessageLogChannelOverrides",
-                schema: "Settings",
-                columns: table => new
-                {
-                    ChannelId = table.Column<long>(type: "bigint", nullable: false),
-                    GuildId = table.Column<long>(type: "bigint", nullable: false),
-                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    ChannelOption = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    SetBy = table.Column<long>(type: "bigint", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MessageLogChannelOverrides", x => new { x.ChannelId, x.GuildId, x.SetAt });
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Mutes",
                 schema: "Settings",
                 columns: table => new
@@ -103,40 +87,6 @@ namespace Grimoire.Settings.Migrations
                 {
                     table.PrimaryKey("PK_Mutes", x => x.SinId);
                     table.CheckConstraint("CK_Mutes_State", "(\"State\" = 'Pending' AND \"ActivatedAt\" IS NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Active' AND \"ActivatedAt\" IS NOT NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Expired' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Removed' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NOT NULL)");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Rewards",
-                schema: "Settings",
-                columns: table => new
-                {
-                    RoleId = table.Column<long>(type: "bigint", nullable: false),
-                    GuildId = table.Column<long>(type: "bigint", nullable: false),
-                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    SetBy = table.Column<long>(type: "bigint", nullable: false),
-                    RewardType = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
-                    RewardLevel = table.Column<int>(type: "integer", nullable: true),
-                    RewardMessage = table.Column<string>(type: "character varying(4096)", maxLength: 4096, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Rewards", x => new { x.GuildId, x.RoleId, x.SetAt });
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SpamFilterOverrides",
-                schema: "Settings",
-                columns: table => new
-                {
-                    ChannelId = table.Column<long>(type: "bigint", nullable: false),
-                    GuildId = table.Column<long>(type: "bigint", nullable: false),
-                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    ChannelOption = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    SetBy = table.Column<long>(type: "bigint", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SpamFilterOverrides", x => new { x.ChannelId, x.GuildId, x.SetAt });
                 });
 
             migrationBuilder.CreateTable(
@@ -162,22 +112,6 @@ namespace Grimoire.Settings.Migrations
                     table.CheckConstraint("CK_ThreadLocks_State", "(\"State\" = 'Pending' AND \"ActivatedAt\" IS NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Active' AND \"ActivatedAt\" IS NOT NULL AND \"EndedAt\" IS NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Expired' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NULL AND \"RemoveReason\" IS NULL)\nOR (\"State\" = 'Removed' AND \"EndedAt\" IS NOT NULL AND \"RemovedBy\" IS NOT NULL)");
                 });
 
-            migrationBuilder.CreateTable(
-                name: "XpTrackedItems",
-                schema: "Settings",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false),
-                    GuildId = table.Column<long>(type: "bigint", nullable: false),
-                    SetAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    SetBy = table.Column<long>(type: "bigint", nullable: false),
-                    Type = table.Column<string>(type: "character varying(21)", maxLength: 21, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_XpTrackedItems", x => new { x.GuildId, x.Id, x.SetAt });
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_ChannelLocks_EndTime",
                 schema: "Settings",
@@ -194,12 +128,6 @@ namespace Grimoire.Settings.Migrations
                 filter: "\"State\" IN ('Pending', 'Active')");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MessageLogChannelOverrides_GuildId",
-                schema: "Settings",
-                table: "MessageLogChannelOverrides",
-                column: "GuildId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Mutes_EndTime",
                 schema: "Settings",
                 table: "Mutes",
@@ -213,12 +141,6 @@ namespace Grimoire.Settings.Migrations
                 columns: new[] { "GuildId", "UserId" },
                 unique: true,
                 filter: "\"State\" IN ('Pending', 'Active')");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SpamFilterOverrides_GuildId",
-                schema: "Settings",
-                table: "SpamFilterOverrides",
-                column: "GuildId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ThreadLocks_EndTime",
@@ -373,88 +295,90 @@ namespace Grimoire.Settings.Migrations
                 END $$;
                 """);
 
-            // ---- XpTrackedItems (IgnoredChannels / IgnoredMembers / IgnoredRoles) ----
-            // Old tables have no SetAt/SetBy; use sentinel values.
-            // Discord snowflake IDs are globally unique per entity type so channel/user/role
-            // ID collisions for the same GuildId are astronomically unlikely.
+            // ---- Settings collections as documents (spec 2.5, C14) ----
+            // main's tables are state tables (one row per key; a removal deletes the row), so every row is in force.
+            // Each guild gets one version-1 document per collection it has anything in, with the sentinels above.
+            // Arrays are sorted by id and jsonb sorts object keys, so a copied document equals the one C# writes.
+
+            // ---- Rewards: one object per guild, keyed by role. Level 0 becomes 1 (OQ-3, Q41b): every member is at
+            // least level 1, so the same members get the role. A null message is left out.
             migrationBuilder.Sql("""
                 DO $$
                 BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'IgnoredChannels') THEN
-                        INSERT INTO "Settings"."XpTrackedItems" ("Id", "GuildId", "SetAt", "SetBy", "Type")
-                        SELECT "ChannelId", "GuildId", '0001-01-01T00:00:00Z', 0, 'IgnoredChannel'
-                        FROM public."IgnoredChannels";
+                    IF (SELECT count(*) FROM pg_tables
+                        WHERE schemaname = 'public' AND tablename IN ('Rewards')) = 1 THEN
+                        INSERT INTO "Settings"."GuildSettings" ("GuildId", "Document", "Version", "Value", "SetBy", "SetAt")
+                        SELECT r."GuildId"::bigint, 'Rewards', 1,
+                            jsonb_build_object('Roles', jsonb_object_agg(r."RoleId"::bigint::text,
+                                jsonb_strip_nulls(jsonb_build_object(
+                                    'Level', GREATEST(r."RewardLevel", 1),
+                                    'Message', r."RewardMessage")))),
+                            0, '0001-01-01T00:00:00Z'
+                        FROM public."Rewards" r
+                        GROUP BY r."GuildId";
                     END IF;
                 END $$;
                 """);
 
+            // ---- XP exclusions: three sorted arrays per guild, each left out when empty. main created the three
+            // tables in one migration, so one guard covers them.
             migrationBuilder.Sql("""
                 DO $$
                 BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'IgnoredMembers') THEN
-                        INSERT INTO "Settings"."XpTrackedItems" ("Id", "GuildId", "SetAt", "SetBy", "Type")
-                        SELECT "UserId", "GuildId", '0001-01-01T00:00:00Z', 0, 'IgnoredMember'
-                        FROM public."IgnoredMembers";
+                    IF (SELECT count(*) FROM pg_tables
+                        WHERE schemaname = 'public'
+                          AND tablename IN ('IgnoredChannels', 'IgnoredMembers', 'IgnoredRoles')) = 3 THEN
+                        INSERT INTO "Settings"."GuildSettings" ("GuildId", "Document", "Version", "Value", "SetBy", "SetAt")
+                        SELECT t."GuildId"::bigint, 'XpExclusions', 1, jsonb_object_agg(t.kind, t.ids),
+                            0, '0001-01-01T00:00:00Z'
+                        FROM (
+                            SELECT i."GuildId", i.kind, jsonb_agg(i.id::bigint::text ORDER BY i.id) AS ids
+                            FROM (SELECT "GuildId", 'Channels' AS kind, "ChannelId" AS id FROM public."IgnoredChannels"
+                                  UNION ALL SELECT "GuildId", 'Members', "UserId" FROM public."IgnoredMembers"
+                                  UNION ALL SELECT "GuildId", 'Roles', "RoleId" FROM public."IgnoredRoles") AS i
+                            GROUP BY i."GuildId", i.kind) AS t
+                        GROUP BY t."GuildId";
                     END IF;
                 END $$;
                 """);
 
+            // ---- Message log overrides: only what is in force (0 AlwaysLog, 1 NeverLog; anything else meant
+            // "inherit", which is no entry).
             migrationBuilder.Sql("""
                 DO $$
                 BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'IgnoredRoles') THEN
-                        INSERT INTO "Settings"."XpTrackedItems" ("Id", "GuildId", "SetAt", "SetBy", "Type")
-                        SELECT "RoleId", "GuildId", '0001-01-01T00:00:00Z', 0, 'IgnoredRole'
-                        FROM public."IgnoredRoles";
+                    IF (SELECT count(*) FROM pg_tables
+                        WHERE schemaname = 'public' AND tablename IN ('MessagesLogChannelOverrides')) = 1 THEN
+                        INSERT INTO "Settings"."GuildSettings" ("GuildId", "Document", "Version", "Value", "SetBy", "SetAt")
+                        SELECT "GuildId"::bigint, 'MessageLogOverrides', 1,
+                            jsonb_build_object('Channels', jsonb_object_agg("ChannelId"::bigint::text,
+                                CASE "ChannelOption" WHEN 0 THEN 'AlwaysLog' ELSE 'NeverLog' END)),
+                            0, '0001-01-01T00:00:00Z'
+                        FROM public."MessagesLogChannelOverrides"
+                        WHERE "ChannelOption" IN (0, 1)
+                        GROUP BY "GuildId";
                     END IF;
                 END $$;
                 """);
 
-            // ---- Rewards (from public.Rewards) ----
-            // Old Rewards table has no SetBy/SetAt; use sentinel values.
+            // ---- Spam filter overrides: the same, with 0 AlwaysFilter and 1 NeverFilter.
             migrationBuilder.Sql("""
                 DO $$
                 BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'Rewards') THEN
-                        INSERT INTO "Settings"."Rewards"
-                            ("GuildId", "RoleId", "SetAt", "SetBy", "RewardType", "RewardLevel", "RewardMessage")
-                        SELECT "GuildId", "RoleId", '0001-01-01T00:00:00Z', 0, 'Added', "RewardLevel", "RewardMessage"
-                        FROM public."Rewards";
+                    IF (SELECT count(*) FROM pg_tables
+                        WHERE schemaname = 'public' AND tablename IN ('SpamFilterOverrides')) = 1 THEN
+                        INSERT INTO "Settings"."GuildSettings" ("GuildId", "Document", "Version", "Value", "SetBy", "SetAt")
+                        SELECT "GuildId"::bigint, 'SpamFilterOverrides', 1,
+                            jsonb_build_object('Channels', jsonb_object_agg("ChannelId"::bigint::text,
+                                CASE "ChannelOption" WHEN 0 THEN 'AlwaysFilter' ELSE 'NeverFilter' END)),
+                            0, '0001-01-01T00:00:00Z'
+                        FROM public."SpamFilterOverrides"
+                        WHERE "ChannelOption" IN (0, 1)
+                        GROUP BY "GuildId";
                     END IF;
                 END $$;
                 """);
 
-            // ---- MessageLogChannelOverrides (from public.MessagesLogChannelOverrides) ----
-            // Old ChannelOption is stored as int: 0 = AlwaysLog, 1 = NeverLog.
-            migrationBuilder.Sql("""
-                DO $$
-                BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'MessagesLogChannelOverrides') THEN
-                        INSERT INTO "Settings"."MessageLogChannelOverrides"
-                            ("ChannelId", "GuildId", "SetAt", "ChannelOption", "SetBy")
-                        SELECT "ChannelId", "GuildId", '0001-01-01T00:00:00Z',
-                            CASE "ChannelOption" WHEN 0 THEN 'AlwaysLog' WHEN 1 THEN 'NeverLog' ELSE 'Inherit' END,
-                            0
-                        FROM public."MessagesLogChannelOverrides";
-                    END IF;
-                END $$;
-                """);
-
-            // ---- SpamFilterOverrides (from public.SpamFilterOverrides) ----
-            // Old ChannelOption is stored as int: 0 = AlwaysFilter, 1 = NeverFilter.
-            migrationBuilder.Sql("""
-                DO $$
-                BEGIN
-                    IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'SpamFilterOverrides') THEN
-                        INSERT INTO "Settings"."SpamFilterOverrides"
-                            ("ChannelId", "GuildId", "SetAt", "ChannelOption", "SetBy")
-                        SELECT "ChannelId", "GuildId", '0001-01-01T00:00:00Z',
-                            CASE "ChannelOption" WHEN 0 THEN 'AlwaysFilter' WHEN 1 THEN 'NeverFilter' ELSE 'Inherit' END,
-                            0
-                        FROM public."SpamFilterOverrides";
-                    END IF;
-                END $$;
-                """);
             // ---- ChannelLocks (from public.Locks): each one Active ----
             // The legacy table has no lock time, so the sentinel stands in. Its ModeratorId is nullable (COALESCE to
             // the sentinel), and its Reason is an empty string when not set (NULLIF maps it to NULL).
@@ -511,27 +435,11 @@ namespace Grimoire.Settings.Migrations
                 schema: "Settings");
 
             migrationBuilder.DropTable(
-                name: "MessageLogChannelOverrides",
-                schema: "Settings");
-
-            migrationBuilder.DropTable(
                 name: "Mutes",
                 schema: "Settings");
 
             migrationBuilder.DropTable(
-                name: "Rewards",
-                schema: "Settings");
-
-            migrationBuilder.DropTable(
-                name: "SpamFilterOverrides",
-                schema: "Settings");
-
-            migrationBuilder.DropTable(
                 name: "ThreadLocks",
-                schema: "Settings");
-
-            migrationBuilder.DropTable(
-                name: "XpTrackedItems",
                 schema: "Settings");
         }
     }

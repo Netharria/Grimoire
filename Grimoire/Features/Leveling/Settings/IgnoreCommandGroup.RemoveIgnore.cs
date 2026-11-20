@@ -7,7 +7,6 @@
 
 using DSharpPlus.Commands.ArgumentModifiers;
 using DSharpPlus.Commands.ContextChecks;
-using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 
 namespace Grimoire.Features.Leveling.Settings;
@@ -24,11 +23,7 @@ public partial class IgnoreCommandGroup
         DiscordChannel? channel = null,
         [VariadicArgument(24)] [Parameter("items")] [Description("The users or roles to remove from the ignore xp list.")]
         SnowflakeObject[]? items = null)
-        => this.UpdateIgnoredAsync(ctx, channel, items, (item, guildId, setBy, setAt) => item switch
-        {
-            DiscordUser => WatchedMember.Create(new UserId(item.Id), guildId, setBy, setAt),
-            DiscordRole => WatchedRole.Create(new RoleId(item.Id), guildId, setBy, setAt),
-            DiscordChannel => WatchedChannel.Create(new ChannelId(item.Id), guildId, setBy, setAt),
-            _ => throw new InvariantViolationException($"Unexpected ignore option {item.GetType().Name}.")
-        }, "are no longer ignored for xp gain.", "were not ignored.");
+        => this.UpdateIgnoredAsync(ctx, channel, items,
+            (guildId, setBy, targets) => this._settingsModule.UnignoreXpAsync(guildId, setBy, targets),
+            "are no longer ignored for xp gain.", "were not ignored.");
 }

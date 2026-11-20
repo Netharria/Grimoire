@@ -7,7 +7,6 @@
 
 using DSharpPlus.Commands.ContextChecks;
 using Grimoire.Features.Shared.Channels.GuildLog;
-using Grimoire.Settings.Domain;
 using Grimoire.Settings.Enums;
 using JetBrains.Annotations;
 using LanguageExt;
@@ -30,14 +29,12 @@ public sealed partial class RewardCommandGroup
 
         var guild = ctx.RequiredGuild;
 
-        await this._settingsModule.GetLevelingRewardsAsync(guild.GetGuildId())
-            .BindFin(rewards => rewards.Any(reward => reward.RoleId == role.GetRoleId())
-                ? Fin.Succ<Unit>(unit)
-                : new NotFound($"Did not find a saved reward for {role.Mention}."))
-            .BindAsync(_ => this._settingsModule.SetRewardAsync(RewardRemoved.Create(role.GetRoleId(),
-                guild.GetGuildId(), ctx.GetModeratorId(), DateTimeOffset.UtcNow)))
+        await this._settingsModule.RemoveRewardsAsync(guild.GetGuildId(), ctx.GetModeratorId(), [role.GetRoleId()])
             .Match(
-                _ => OnRemoveSuccess(ctx, role, guild),
+                write => write.Match(
+                    saved: _ => OnRemoveSuccess(ctx, role, guild),
+                    // Decided against the version the write replaced (spec 2.5), so there's no separate check first.
+                    unchanged: _ => OnFail(ctx, new NotFound($"Did not find a saved reward for {role.Mention}."))),
                 error => OnFail(ctx, error));
     }
 

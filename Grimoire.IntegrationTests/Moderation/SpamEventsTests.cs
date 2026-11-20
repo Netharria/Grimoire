@@ -12,6 +12,8 @@ using Grimoire.Settings.Enums;
 using Grimoire.Settings.Services;
 using Grimoire.IntegrationTests.FakeDiscord;
 using Microsoft.Extensions.DependencyInjection;
+using Grimoire.Settings.Domain.Documents;
+using LanguageExt;
 
 namespace Grimoire.IntegrationTests.Moderation;
 
@@ -416,9 +418,9 @@ public sealed class SpamEventsTests(GrimoireCoreFactory database) : IAsyncLifeti
             return;
         var setting = option switch
         {
-            "Always" => SpamFilterOverrideOption.AlwaysFilter,
+            "Always" => (Option<SpamFilterOverrideOption>)SpamFilterOverrideOption.AlwaysFilter,
             "Never" => SpamFilterOverrideOption.NeverFilter,
-            _ => SpamFilterOverrideOption.Inherit
+            _ => Option<SpamFilterOverrideOption>.None
         };
         (await this.Settings.SetSpamFilterOverrideAsync(new ChannelId(channel.Id), this.GuildId, this.OwnerId, setting,
             TestContext.Current.CancellationToken)).ShouldBeSetOrUnchanged();

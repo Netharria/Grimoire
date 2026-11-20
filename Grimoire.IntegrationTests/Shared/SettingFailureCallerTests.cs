@@ -95,7 +95,7 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
     public async Task IgnoreAdd_WhenItCannotBeSaved_SaysSoPrivately_AndLogsNothing()
     {
         FakeReply reply;
-        await using (await database.RefuseSettingsInsertsAsync(nameof(XpTrackedItem)))
+        await using (await database.RefuseSettingsInsertsAsync("GuildSettingRow"))
             reply = await this._bot.RunSlashCommandAndWaitAsync("ignore", this.Guild.Admin,
                 SlashOption.Subcommand("add", SlashOption.MentionableUser("items_0", this.Guild.User1)));
 
@@ -108,7 +108,7 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
     public async Task UserInfo_WhenTheIgnoreListCannotBeRead_SaysItDoesNotKnow()
     {
         FakeReply reply;
-        await using (await database.MakeSettingsTablesUnreadableAsync(nameof(XpTrackedItem)))
+        await using (await database.MakeSettingsTablesUnreadableAsync("GuildSettingRow"))
             reply = await this._bot.RunSlashCommandAndWaitAsync("user_info", this.Guild.Admin,
                 SlashOption.User("user", this.Guild.User1));
 
@@ -119,7 +119,7 @@ public sealed class SettingFailureCallerTests(GrimoireCoreFactory database) : IA
     [Fact]
     public async Task GainingXp_WhenTheIgnoreListCannotBeRead_AwardsNothing_AndDoesNotCrash()
     {
-        await using (await database.MakeSettingsTablesUnreadableAsync(nameof(XpTrackedItem)))
+        await using (await database.MakeSettingsTablesUnreadableAsync("GuildSettingRow"))
         {
             this._bot.SendMessage(this.Guild.User1, this.Guild.General, "hello");
             await this._bot.Logs.WaitForAsync(logEvent => logEvent.RenderMessage().StartsWith(

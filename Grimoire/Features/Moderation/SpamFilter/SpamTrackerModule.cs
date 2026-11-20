@@ -5,7 +5,8 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Documents;
+using LanguageExt;
 using Grimoire.Settings.Services;
 using Microsoft.Extensions.Caching.Hybrid;
 
@@ -49,11 +50,11 @@ public class SpamTrackerModule(SettingsModule settingsModule, HybridCache memory
                 await settingsModule.GetSpamFilterOverrideAsync(
                     currentChannel.Guild.GetGuildId(),
                     currentChannel.GetChannelId(),
-                    cancellationToken).OrDefaultDuringMigration(SpamFilterOverrideOption.Inherit);
+                    cancellationToken).OrDefaultDuringMigration(Option<SpamFilterOverrideOption>.None);
 
-            if (spamFilterOverrideOption == SpamFilterOverrideOption.AlwaysFilter)
+            if (spamFilterOverrideOption == Some(SpamFilterOverrideOption.AlwaysFilter))
                 break;
-            if (spamFilterOverrideOption == SpamFilterOverrideOption.NeverFilter)
+            if (spamFilterOverrideOption == Some(SpamFilterOverrideOption.NeverFilter))
                 return new CheckSpamResult { IsSpam = false };
 
             currentChannel = currentChannel.Parent;

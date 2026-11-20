@@ -22,7 +22,9 @@ public sealed class DiagnosticsIgnoredRoleDeleted(SettingsModule settingsModule,
     public async Task HandleEventAsync(DiscordClient sender, GuildRoleDeletedEventArgs args)
     {
         var guildId = args.Guild.GetGuildId();
-        if (await settingsModule.RemoveDiagnosticsIgnoredRoleAsync(guildId, args.Role.GetRoleId())
+        if (await settingsModule.RemoveDiagnosticsIgnoredRoleAsync(guildId,
+                // The bot removes it, and a settings version needs a who (spec 2.5).
+                new ModeratorId(sender.CurrentUser.Id), args.Role.GetRoleId())
             is not Fin<Unit>.Succ)
             return;
 

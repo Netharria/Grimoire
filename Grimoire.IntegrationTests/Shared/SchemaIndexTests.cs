@@ -52,9 +52,8 @@ public sealed class SchemaIndexTests(GrimoireCoreFactory database)
                     "IX_XpHistory_GuildId_Xp", "IX_Sin_Id_GuildId", "IX_Pardons_SinId_SetAt",
                     "IX_SinReasonHistory_SinId_SetAt", "IX_CustomCommandUsages_GuildId_Name_UserId",
                     "IX_ChannelLocks_ChannelId_GuildId_SetAt", "IX_ThreadLocks_ChannelId_GuildId_SetAt",
-                    "IX_Mutes_UserId_GuildId_SetAt", "IX_Rewards_GuildId_RoleId_SetAt",
-                    "IX_XpTrackedItems_GuildId_Id_SetAt", "IX_MessageLogChannelOverrides_ChannelId_GuildId_SetAt",
-                    "IX_SpamFilterOverrides_ChannelId_GuildId_SetAt"
+                    // The Settings collection tables' indexes went with their tables (spec 2.5).
+                    "IX_Mutes_UserId_GuildId_SetAt"
                 ])))
             .ShouldBeEmpty();
 

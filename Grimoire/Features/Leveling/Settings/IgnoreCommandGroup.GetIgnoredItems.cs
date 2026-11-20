@@ -5,10 +5,9 @@
 // All rights reserved.
 // Licensed under the AGPL-3.0 license. See LICENSE file in the project root for full license information.
 
-using System.Collections.Frozen;
 using System.Text;
 using DSharpPlus.Commands.ContextChecks;
-using Grimoire.Settings.Domain;
+using Grimoire.Settings.Domain.Documents;
 using Grimoire.Settings.Enums;
 using LanguageExt;
 
@@ -28,7 +27,7 @@ public sealed partial class IgnoreCommandGroup
         var guild = ctx.RequiredGuild;
 
         if (await this._settingsModule.GetAllIgnoredItems(guild.GetGuildId())
-            is not Fin<FrozenSet<XpIgnoredItem>>.Succ { Value: var ignoredItems })
+            is not Fin<IReadOnlySet<XpTarget>>.Succ { Value: var ignoredItems })
         {
             await ctx.SendErrorResponseAsync("Could not load the ignored items. Please try again later.");
             return;
@@ -46,20 +45,20 @@ public sealed partial class IgnoreCommandGroup
             BuildMessage(ignoredItems).TrimEnd('\n').Split('\n'));
     }
 
-    private static string BuildMessage(FrozenSet<XpIgnoredItem> ignoredItems)
+    private static string BuildMessage(IReadOnlySet<XpTarget> ignoredItems)
     {
         var ignoredMessageBuilder = new StringBuilder().Append("**Channels**\n");
         ignoredMessageBuilder.Append(string.Join('\n',
-            ignoredItems.OfType<IgnoredChannel>().Select(x => $"<#{x.ChannelId.Value}>"))).Append('\n');
+            ignoredItems.OfType<XpTarget.Channel>().Select(x => $"<#{x.Id.Value}>"))).Append('\n');
 
 
         ignoredMessageBuilder.Append("\n**Roles**\n");
         ignoredMessageBuilder.Append(string.Join('\n',
-            ignoredItems.OfType<IgnoredRole>().Select(x => $"<@&{x.RoleId.Value}>"))).Append('\n');
+            ignoredItems.OfType<XpTarget.Role>().Select(x => $"<@&{x.Id.Value}>"))).Append('\n');
 
         ignoredMessageBuilder.Append("\n**Users**\n");
         ignoredMessageBuilder.Append(string.Join('\n',
-            ignoredItems.OfType<IgnoredMember>().Select(x => $"<@{x.UserId.Value}>"))).Append('\n');
+            ignoredItems.OfType<XpTarget.Member>().Select(x => $"<@{x.Id.Value}>"))).Append('\n');
         return ignoredMessageBuilder.ToString();
     }
 }
